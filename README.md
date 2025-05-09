@@ -20,6 +20,21 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+### API Key Setup
+
+This application requires an OpenRouter API key to function:
+
+1. Create an account at [OpenRouter](https://openrouter.ai)
+2. Generate an API key at [https://openrouter.ai/keys](https://openrouter.ai/keys)
+3. Copy the `.env.example` file to `.env` in the project root:
+   ```
+   cp .env.example .env
+   ```
+4. Add your OpenRouter API key to the `.env` file:
+   ```
+   OPENAPI_KEY=your_openrouter_api_key_here
+   ```
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
