@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Loader2, Upload, FileText, AlertTriangle } from "lucide-react";
 
 interface PdfUploadProps {
-  onPdfProcessedAction: (haiku: string) => void;
+  onPdfProcessedAction: (summary: string) => void;
   onProcessingStartAction: () => void;
 }
 
@@ -102,11 +102,11 @@ export function PdfUpload({ onPdfProcessedAction, onProcessingStartAction }: Pdf
 
       const data = await response.json();
       
-      if (data.haiku) {
-        onPdfProcessedAction(data.haiku);
+      if (data.summary) {
+        onPdfProcessedAction(data.summary);
         resetState();
       } else {
-        throw new Error("No haiku returned from server");
+        throw new Error("No summary returned from server");
       }
     } catch (err) {
       console.error("Error uploading PDF:", err);
@@ -114,7 +114,7 @@ export function PdfUpload({ onPdfProcessedAction, onProcessingStartAction }: Pdf
       if (err instanceof Error) {
         const errorMsg = err.message;
         if (errorMsg.includes("empty") || errorMsg.includes("too little text")) {
-          setError("The PDF appears to be empty or contains too little text to generate a haiku.");
+          setError("The PDF appears to be empty or contains too little text to generate a summary.");
         } else if (errorMsg.includes("PDF parsing failed")) {
           setError("Failed to read the PDF. The file might be corrupted or password-protected.");
         } else {
@@ -134,10 +134,10 @@ export function PdfUpload({ onPdfProcessedAction, onProcessingStartAction }: Pdf
       <Card className="w-full border-blue-200 dark:border-blue-800 bg-white/70 dark:bg-blue-950/30">
         <CardHeader>
           <CardTitle className="text-xl text-blue-800 dark:text-blue-300">
-            PDF to Haiku
+            PDF to Summary
           </CardTitle>
           <CardDescription>
-            Upload a PDF document and convert its content into beautiful haiku poetry
+            Upload a PDF document and generate a concise summary of its content
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -216,7 +216,7 @@ export function PdfUpload({ onPdfProcessedAction, onProcessingStartAction }: Pdf
                       Processing
                     </>
                   ) : (
-                    "Convert to Haiku"
+                    "Generate Summary"
                   )}
                 </Button>
               </>

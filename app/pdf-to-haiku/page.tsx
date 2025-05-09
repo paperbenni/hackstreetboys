@@ -5,16 +5,16 @@ import { PdfUpload } from "@/components/pdf-to-haiku/pdf-upload";
 import { HaikuDisplay } from "@/components/pdf-to-haiku/haiku-display";
 import { ApiKeyWarning } from "@/components/api-key-warning";
 
-export default function PdfToHaikuPage() {
-  const [haiku, setHaiku] = useState<string>("");
+export default function PdfToSummaryPage() {
+  const [summary, setSummary] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const handleProcessingStart = () => {
     setIsLoading(true);
   };
 
-  const handlePdfProcessed = (haikuText: string) => {
-    setHaiku(haikuText);
+  const handlePdfProcessed = (summaryText: string) => {
+    setSummary(summaryText);
     setIsLoading(false);
   };
 
@@ -29,7 +29,7 @@ export default function PdfToHaikuPage() {
           />
 
         <HaikuDisplay
-          haiku={haiku}
+          summary={summary}
           isLoading={isLoading}
         />
       </main>

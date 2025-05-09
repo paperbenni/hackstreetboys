@@ -31,16 +31,16 @@ export function Navbar() {
                 Chat
               </Link>
               <Link
-                href="/pdf-to-haiku"
-                className={cn(
-                  "px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                  pathname === "/pdf-to-haiku"
-                    ? "bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200"
-                    : "text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/50"
-                )}
-              >
-                PDF to Haiku
-              </Link>
+              href="/pdf-to-haiku"
+              className={cn(
+                "px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                pathname === "/pdf-to-haiku"
+                  ? "bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200"
+                  : "text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/50"
+              )}
+            >
+              PDF to Summary
+            </Link>
             </div>
           </div>
           <div className="md:hidden">
@@ -65,7 +65,7 @@ export function Navbar() {
                     : "text-blue-700 dark:text-blue-300"
                 )}
               >
-                PDF to Haiku
+                PDF to Summary
               </Link>
             </div>
           </div>

@@ -82,11 +82,11 @@ export async function POST(request: NextRequest) {
       ? pdfText.substring(0, 4000) + '...'
       : pdfText;
 
-    // Create a prompt for generating a haiku from the PDF text
+    // Create a prompt for generating a summary from the PDF text
     const prompt = `
-      Create a beautiful, thoughtful haiku inspired by the following text from a PDF document. 
-      Follow the traditional 5-7-5 syllable pattern. Use vivid imagery and capture the essence 
-      of the text in a poetic way.
+      Create a clear, concise summary of the following text from a PDF document.
+      Capture the main ideas, key points, and important details in a well-structured summary.
+      Keep the summary informative and comprehensive, focusing on the most important information.
       
       Text from PDF:
       ${truncatedText}
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
       method: 'POST',
       headers: getApiHeaders(apiKey),
       body: JSON.stringify({
-        model: 'anthropic/claude-3-haiku:beta', // Using Claude Haiku for thematic consistency
+        model: 'anthropic/claude-3-haiku:beta', // Using a smaller model for efficiency
         messages: [
           { role: 'user', content: prompt }
         ],
@@ -115,9 +115,9 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await response.json();
-    const haikuContent = data.choices?.[0]?.message?.content || 'Could not generate haiku from the provided PDF.';
+    const summaryContent = data.choices?.[0]?.message?.content || 'Could not generate summary from the provided PDF.';
 
-    return NextResponse.json({ haiku: haikuContent });
+    return NextResponse.json({ summary: summaryContent });
     
   } catch (error) {
     console.error('Error processing PDF to Haiku request:', error);
