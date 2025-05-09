@@ -14,7 +14,7 @@ export function Navbar() {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
             <Link href="/" className="flex-shrink-0">
-              <span className="text-blue-700 dark:text-blue-300 font-bold text-xl">OpenRouter Demo</span>
+              <span className="text-blue-700 dark:text-blue-300 font-bold text-xl">Hackstreet Boys</span>
             </Link>
           </div>
           <div className="hidden md:block">
