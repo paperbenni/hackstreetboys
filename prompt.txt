@@ -1,0 +1,15 @@
+
+Below there is a specification of a data format in markdown. After the marker
+#SPECEND there will be a list of orders. extract the relevant orders to the
+specified format. Ignore anything not related to the orders. 
+
+
+
+#SPECEND
+
+
+
+
+
+
+
