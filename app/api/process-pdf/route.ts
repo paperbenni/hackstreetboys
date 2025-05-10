@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { OPENROUTER_API_URL, getApiHeaders, DEFAULT_MODEL } from "@/lib/api/openrouter";
+import {
+  OPENROUTER_API_URL,
+  getApiHeaders,
+  DEFAULT_MODEL,
+} from "@/lib/api/openrouter";
 import { extractTextFromPdf } from "@/lib/pdf/pdf-parser";
 
 // Set a maximum file size for uploads (10MB)
@@ -139,10 +143,6 @@ export async function POST(request: NextRequest) {
 
       # Format explanation:
 
-      - customerId: The ID of the customer, which should be prompted in the interface.
-      - commission: The commission for the customer.
-      - type: The type of the offer; it can be a static value, such as "A," which stands for 'Angebot' (offer).
-      - shippingConditionId: The ID of the shipping condition, also a static value, for example, "2," which represents shipping with DHL.
       - items: The items included in the offer, represented as an array. Each item is an object with the following properties:
         - sku: The SKU of the item, corresponding to the article numbers from the product and service catalog.
         - name: The name of the item.
@@ -164,6 +164,7 @@ export async function POST(request: NextRequest) {
         - Suggestions for Distribution: Provide suggestions on who the specifications or individual parts can be sent to.
       - The UI interface should be easy to use and understand, it should be self explanatory.
       - All kinds of advanced UX that simplify the generation of offers are appreciated. For example, a live representation of the offer as a PDF, which users can edit inline before exporting the desired output, would be beneficial.
+      - The commission acts like an ID for the order. It can be a number or a hierarchical notation or some other format
 
       #### Breakdown by product groups:
 
@@ -257,14 +258,14 @@ export async function POST(request: NextRequest) {
     };
 
     // Override streaming if disabled in environment variables
-    const disableStreaming = process.env.DISABLE_STREAMING === 'true';
+    const disableStreaming = process.env.DISABLE_STREAMING === "true";
     if (disableStreaming) {
       requestOptions.body = JSON.stringify({
         ...JSON.parse(requestOptions.body as string),
-        stream: false
+        stream: false,
       });
     }
-    
+
     // Send request to OpenRouter API
     const response = await fetch(OPENROUTER_API_URL, requestOptions);
 
@@ -286,18 +287,18 @@ export async function POST(request: NextRequest) {
       const summaryContent =
         responseData.choices?.[0]?.message?.content ||
         "Could not generate summary from the provided PDF.";
-        
+
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           summary: summaryContent,
-          rawMarkdown: fullMarkdown // Return the full markdown content
+          rawMarkdown: fullMarkdown, // Return the full markdown content
         }),
-        { 
+        {
           status: 200,
           headers: {
-            'Content-Type': 'application/json',
-          }
-        }
+            "Content-Type": "application/json",
+          },
+        },
       );
     }
 
@@ -308,11 +309,15 @@ export async function POST(request: NextRequest) {
       async start(controller) {
         try {
           // Send the initial data with the raw markdown
-          controller.enqueue(encoder.encode(JSON.stringify({ 
-            type: 'init',
-            rawMarkdown: fullMarkdown
-          }) + '\n'));
-          
+          controller.enqueue(
+            encoder.encode(
+              JSON.stringify({
+                type: "init",
+                rawMarkdown: fullMarkdown,
+              }) + "\n",
+            ),
+          );
+
           // Process the streaming response
           const reader = response.body?.getReader();
           if (!reader) throw new Error("Response body is null");
@@ -320,49 +325,58 @@ export async function POST(request: NextRequest) {
           let summaryContent = "";
           let buffer = "";
           const decoder = new TextDecoder();
-          
+
           try {
             while (true) {
               const { done, value } = await reader.read();
               if (done) break;
-              
+
               // Append new chunk to buffer with streaming mode
               buffer += decoder.decode(value, { stream: true });
-              
+
               // Process complete lines from buffer
               while (true) {
-                const lineEnd = buffer.indexOf('\n');
+                const lineEnd = buffer.indexOf("\n");
                 if (lineEnd === -1) break;
-                
+
                 const line = buffer.slice(0, lineEnd).trim();
                 buffer = buffer.slice(lineEnd + 1);
-                
-                if (!line || line === 'data: [DONE]') continue;
-                
-                if (line.startsWith('data: ')) {
+
+                if (!line || line === "data: [DONE]") continue;
+
+                if (line.startsWith("data: ")) {
                   const data = line.slice(6);
-                  
+
                   // Skip OpenRouter processing messages
-                  if (data.includes('OPENROUTER PROCESSING')) continue;
-                  
+                  if (data.includes("OPENROUTER PROCESSING")) continue;
+
                   try {
                     const parsed = JSON.parse(data);
-                    const contentDelta = parsed.choices[0]?.delta?.content || 
-                                        parsed.choices[0]?.message?.content || '';
-                    
+                    const contentDelta =
+                      parsed.choices[0]?.delta?.content ||
+                      parsed.choices[0]?.message?.content ||
+                      "";
+
                     if (contentDelta) {
                       // Append to the accumulated summary content
                       summaryContent += contentDelta;
-                      
+
                       // Send delta to the client
-                      controller.enqueue(encoder.encode(JSON.stringify({ 
-                        type: 'delta',
-                        content: contentDelta 
-                      }) + '\n'));
+                      controller.enqueue(
+                        encoder.encode(
+                          JSON.stringify({
+                            type: "delta",
+                            content: contentDelta,
+                          }) + "\n",
+                        ),
+                      );
                     }
                   } catch (e) {
                     // Ignore invalid JSON
-                    console.error('Error parsing JSON:', e instanceof Error ? e.message : String(e));
+                    console.error(
+                      "Error parsing JSON:",
+                      e instanceof Error ? e.message : String(e),
+                    );
                   }
                 }
               }
@@ -370,32 +384,41 @@ export async function POST(request: NextRequest) {
           } finally {
             reader.cancel();
           }
-          
+
           // Send complete message when done
-          controller.enqueue(encoder.encode(JSON.stringify({ 
-            type: 'complete',
-            summary: summaryContent || "Could not generate summary from the provided PDF."
-          }) + '\n'));
-          
+          controller.enqueue(
+            encoder.encode(
+              JSON.stringify({
+                type: "complete",
+                summary:
+                  summaryContent ||
+                  "Could not generate summary from the provided PDF.",
+              }) + "\n",
+            ),
+          );
         } catch (error) {
-          console.error('Streaming error:', error);
-          controller.enqueue(encoder.encode(JSON.stringify({ 
-            type: 'error',
-            error: error instanceof Error ? error.message : String(error)
-          }) + '\n'));
+          console.error("Streaming error:", error);
+          controller.enqueue(
+            encoder.encode(
+              JSON.stringify({
+                type: "error",
+                error: error instanceof Error ? error.message : String(error),
+              }) + "\n",
+            ),
+          );
         } finally {
           controller.close();
         }
-      }
+      },
     });
 
     // Return a streaming response
     return new Response(customReadable, {
       headers: {
-        'Content-Type': 'application/x-ndjson',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-      }
+        "Content-Type": "application/x-ndjson",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      },
     });
   } catch (error) {
     console.error("Error processing PDF to process request:", error);
