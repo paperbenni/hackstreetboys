@@ -187,7 +187,7 @@ export async function processJsonStreamingResponse(
           
           switch (data.type) {
             case 'init':
-              // Initialize with metadata
+              // Initialize with metadata (including Azure bounding boxes if present)
               if (handlers.onInit) handlers.onInit(data);
               break;
               

@@ -109,7 +109,7 @@ export function PdfUpload({
       const formData = new FormData();
       formData.append("file", selectedFile);
 
-      const response = await fetch("/api/process-pdf", {
+      const response = await fetch("/api/process-pdf-parallel", {
         method: "POST",
         body: formData,
       });
@@ -131,10 +131,14 @@ export function PdfUpload({
         
         await processJsonStreamingResponse(response, {
           onInit: (data) => {
-            // Initialize with raw markdown
+            // Initialize with raw markdown and Azure bounding box data
             rawMarkdownText = data.rawMarkdown ? String(data.rawMarkdown) : "";
-            // Immediately update the UI with the raw markdown (empty summary at this point)
+            // Immediately update the UI with the raw markdown and Azure data (empty summary at this point)
             onPdfProcessedAction("", rawMarkdownText);
+            // Pass Azure bounding box data to the PDF viewer if available
+            if (data.azureResult && onTestJsonGenerated) {
+              onTestJsonGenerated(JSON.stringify(data.azureResult));
+            }
           },
           onDelta: (content) => {
             // Ensure content is a string before adding to accumulated content

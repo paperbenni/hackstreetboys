@@ -7,6 +7,7 @@ import { PDFDataList } from "@/components/process-pdf/pdf-data-list";
 import { ApiKeyWarning } from "@/components/api-key-warning";
 import { Button } from "@/components/ui/button";
 import { RefreshCcw } from "lucide-react";
+import { BoundingBox } from "@/components/PDFViewer";
 
 
 export default function ProcessDocumentPage() {
@@ -14,6 +15,10 @@ export default function ProcessDocumentPage() {
   const [rawMarkdown, setRawMarkdown] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [boundingBoxes, setBoundingBoxes] = useState<BoundingBox[]>([]);
+  const [visibleBoxes, setVisibleBoxes] = useState<Record<string, boolean>>({});
+  const [pageWidth, setPageWidth] = useState<number>(8.5);
+  const [pageHeight, setPageHeight] = useState<number>(11);
 
   const handleProcessingStart = () => {
     setIsLoading(true);
@@ -27,13 +32,53 @@ export default function ProcessDocumentPage() {
     // in the PdfUpload component's onComplete handler
   };
 
-  const handleTestJsonGenerated = () => {
-    // No longer processing JSON content
-    setIsLoading(false);
+  const handleTestJsonGenerated = (jsonData: string) => {
+    try {
+      // Parse the JSON data
+      const data = JSON.parse(jsonData);
+      
+      // If it's from Azure processing, extract bounding boxes
+      if (data.commissionData && Array.isArray(data.commissionData)) {
+        // Process to our BoundingBox format
+        const boxes: BoundingBox[] = data.commissionData.map((item: {
+          id: string;
+          coordinates: number[];
+          commission: string;
+        }) => ({
+          id: item.id,
+          coordinates: item.coordinates,
+          color: "rgba(255, 0, 0, 0.2)",
+          strokeColor: "red",
+        }));
+        
+        // Set the bounding boxes and make all visible by default
+        setBoundingBoxes(boxes);
+        const boxVisibility: Record<string, boolean> = {};
+        boxes.forEach(box => {
+          boxVisibility[box.id] = true;
+        });
+        setVisibleBoxes(boxVisibility);
+        
+        // Set page dimensions if provided
+        if (data.pageWidthInches && data.pageHeightInches) {
+          setPageWidth(data.pageWidthInches);
+          setPageHeight(data.pageHeightInches);
+        }
+      }
+      
+      // No longer processing JSON content
+      setIsLoading(false);
+    } catch (err) {
+      console.error("Error processing JSON data:", err);
+      setIsLoading(false);
+    }
   };
 
   const handleFileSelected = (file: File | null) => {
     setSelectedFile(file);
+    // Reset bounding boxes when a new file is selected
+    setBoundingBoxes([]);
+    setVisibleBoxes({});
   };
 
   const handleNewSummary = () => {
@@ -41,6 +86,9 @@ export default function ProcessDocumentPage() {
     setRawMarkdown("");
     setIsLoading(false);
     // Keep the file selected so user can still see the PDF
+    // But reset the bounding boxes
+    setBoundingBoxes([]);
+    setVisibleBoxes({});
   };
 
   return (
@@ -66,7 +114,13 @@ export default function ProcessDocumentPage() {
                 <h2 className="text-lg font-medium text-slate-800 dark:text-slate-300 mb-2 lg:mb-4">
                   Document View
                 </h2>
-                <PdfViewer file={selectedFile} />
+                <PdfViewer 
+                  file={selectedFile} 
+                  boundingBoxes={boundingBoxes}
+                  visibleBoxes={visibleBoxes}
+                  pageWidthInches={pageWidth}
+                  pageHeightInches={pageHeight}
+                />
               </div>
             )}
 
