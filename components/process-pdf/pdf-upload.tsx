@@ -12,7 +12,7 @@ import {
 import { Loader2, Upload, FileText, AlertTriangle } from "lucide-react";
 
 interface PdfUploadProps {
-  onPdfProcessedAction: (summary: string) => void;
+  onPdfProcessedAction: (summary: string, rawMarkdown?: string) => void;
   onProcessingStartAction: () => void;
   onFileSelectedAction: (file: File | null) => void;
 }
@@ -121,7 +121,7 @@ export function PdfUpload({
       const data = await response.json();
 
       if (data.summary) {
-        onPdfProcessedAction(data.summary);
+        onPdfProcessedAction(data.summary, data.rawMarkdown);
         // Don't reset the selected file after successful processing
         setError(null);
       } else {
@@ -149,7 +149,7 @@ export function PdfUpload({
       } else {
         setError("An unknown error occurred");
       }
-      onPdfProcessedAction(""); // Clear any previous response
+      onPdfProcessedAction("", ""); // Clear any previous response
     } finally {
       setIsUploading(false);
     }

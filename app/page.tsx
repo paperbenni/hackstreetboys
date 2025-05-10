@@ -10,6 +10,7 @@ import { RefreshCcw } from "lucide-react";
 
 export default function ProcessDocumentPage() {
   const [summary, setSummary] = useState<string>("");
+  const [rawMarkdown, setRawMarkdown] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
@@ -17,8 +18,9 @@ export default function ProcessDocumentPage() {
     setIsLoading(true);
   };
 
-  const handlePdfProcessed = (summaryText: string) => {
+  const handlePdfProcessed = (summaryText: string, markdownText: string = "") => {
     setSummary(summaryText);
+    setRawMarkdown(markdownText);
     setIsLoading(false);
   };
 
@@ -28,6 +30,7 @@ export default function ProcessDocumentPage() {
 
   const handleNewSummary = () => {
     setSummary("");
+    setRawMarkdown("");
     setIsLoading(false);
     // Keep the file selected so user can still see the PDF
   };
@@ -77,7 +80,7 @@ export default function ProcessDocumentPage() {
                     </Button>
                   )}
                 </div>
-                <SummaryDisplay summary={summary} isLoading={isLoading} />
+                <SummaryDisplay summary={summary} isLoading={isLoading} rawMarkdown={rawMarkdown} />
               </div>
             )}
           </div>

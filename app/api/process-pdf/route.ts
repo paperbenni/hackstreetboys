@@ -269,7 +269,10 @@ export async function POST(request: NextRequest) {
       data.choices?.[0]?.message?.content ||
       "Could not generate summary from the provided PDF.";
 
-    return NextResponse.json({ summary: summaryContent });
+    return NextResponse.json({ 
+      summary: summaryContent,
+      rawMarkdown: truncatedMarkdown 
+    });
   } catch (error) {
     console.error("Error processing PDF to process request:", error);
 
