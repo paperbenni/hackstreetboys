@@ -1,22 +1,7 @@
 import React from "react";
 import { AlertCircle, Package, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-// Order interface - defined locally to match the structure used in pdf-data-list.tsx
-// Note: This is different from the Order interface in types.ts
-interface Order {
-  sku: string;
-  name: string;
-  text: string;
-  quantity: string;
-  quantityUnit: string;
-  price: string;
-  priceUnit: string;
-  commission: string;
-  purchasePrice?: string;
-  relevant?: boolean;
-  unsure?: boolean;
-}
+import { Order } from "./types";
 
 interface OrderItemDisplayProps {
   item: Order;

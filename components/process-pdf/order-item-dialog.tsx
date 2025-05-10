@@ -7,21 +7,7 @@ import { Input } from "../ui/input";
 import { Checkbox } from "../ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { Label } from "../ui/label";
-
-// Define interface for Order
-interface Order {
-  sku: string;
-  name: string;
-  text: string;
-  quantity: string;
-  quantityUnit: string;
-  price: string;
-  priceUnit: string;
-  commission: string;
-  purchasePrice?: string;
-  relevant?: boolean;
-  unsure?: boolean;
-}
+import { Order } from "./types";
 
 interface OrderItemDialogProps {
   isOpen: boolean;
