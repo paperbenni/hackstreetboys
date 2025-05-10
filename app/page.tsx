@@ -7,7 +7,7 @@ import { SummaryDisplay } from "@/components/process-pdf/summary-display";
 import { ApiKeyWarning } from "@/components/api-key-warning";
 import { Button } from "@/components/ui/button";
 import { RefreshCcw } from "lucide-react";
-import { extractJsonFromMarkdown } from "@/lib/utils";
+import { isCompletableJson, formatJson } from "@/lib/json-validator";
 
 export default function ProcessDocumentPage() {
   const [summary, setSummary] = useState<string>("");
@@ -23,13 +23,48 @@ export default function ProcessDocumentPage() {
   const handlePdfProcessed = (summaryText: string, markdownText: string = "") => {
     setSummary(summaryText);
     setRawMarkdown(markdownText);
-    // Try to extract JSON from the response
+    // Extract and validate JSON from the response
     try {
-      const extractedJson = extractJsonFromMarkdown(markdownText || summaryText);
-      setJsonData(extractedJson);
+      // Try to find JSON in the markdown text first
+      const jsonRegex = /```(?:json)?\s*\n([\s\S]*?)\n```/;
+      const match = (markdownText || summaryText).match(jsonRegex);
+      
+      if (match && match[1]) {
+        // Try to validate and complete JSON from code block
+        const [canComplete, completed] = isCompletableJson(match[1]);
+        if (canComplete && completed) {
+          // Format the completed JSON for readability
+          const formattedJson = formatJson(completed, 2);
+          setJsonData(formattedJson || completed);
+        } else {
+          // Try to format the JSON as is
+          const formattedJson = formatJson(match[1], 2);
+          setJsonData(formattedJson || match[1]);
+        }
+      } else {
+        // Look for anything that looks like JSON object/array
+        const jsonObjectRegex = /(\{[\s\S]*\}|\[[\s\S]*\])/;
+        const objectMatch = (markdownText || summaryText).match(jsonObjectRegex);
+        
+        if (objectMatch && objectMatch[1]) {
+          const [canComplete, completed] = isCompletableJson(objectMatch[1]);
+          if (canComplete && completed) {
+            // Format the completed JSON for readability
+            const formattedJson = formatJson(completed, 2);
+            setJsonData(formattedJson || completed);
+          } else {
+            // Try to format the JSON as is
+            const formattedJson = formatJson(objectMatch[1], 2);
+            setJsonData(formattedJson || objectMatch[1]);
+          }
+        } else {
+          setJsonData("{}");
+        }
+      }
     } catch (error) {
       console.error("Failed to extract JSON:", error);
-      setJsonData("{}");
+      // Return a nicely formatted empty object for better display
+      setJsonData("{\n  \n}");
     }
     // Keep loading state true while streaming is happening
     // The loading state will be set to false only when processing is complete
@@ -37,7 +72,9 @@ export default function ProcessDocumentPage() {
   };
 
   const handleTestJsonGenerated = (json: string) => {
-    setJsonData(json);
+    // Format the JSON for readability
+    const formattedJson = formatJson(json, 2);
+    setJsonData(formattedJson || json);
     setIsLoading(false);
   };
 
