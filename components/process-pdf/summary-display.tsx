@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import DebugTab from "@/components/DebugTab";
-import JsonTreeTab from "@/components/JsonTreeTab";
+import EnhancedJsonTreeTab from "@/components/EnhancedJsonTreeTab";
 import { scrollableContainerStyle, ensureNoTruncation, extractJsonFromMarkdown } from "@/lib/utils";
 
 interface SummaryDisplayProps {
@@ -53,14 +53,51 @@ export function SummaryDisplay({
     return "{}";
   }, [jsonData, rawMarkdown, summary]);
   
-  // Check if we have valid JSON to display
+  // Check if we have valid JSON to display (or JSON that could be completed)
   const hasValidJson = useMemo(() => {
     try {
       const parsed = JSON.parse(extractedJsonData);
       return Object.keys(parsed).length > 0 || 
              (Array.isArray(parsed) && parsed.length > 0);
     } catch {
-      return false;
+      // Try to complete the JSON
+      try {
+        const stack = [];
+        let inString = false;
+        let escaped = false;
+        
+        // Process characters looking for unclosed brackets
+        for (let i = 0; i < extractedJsonData.length; i++) {
+          const char = extractedJsonData[i];
+          
+          if (char === '"' && !escaped) {
+            inString = !inString;
+          }
+          
+          if (inString) {
+            escaped = char === '\\' && !escaped;
+            continue;
+          }
+          
+          escaped = false;
+          
+          if (char === '{' || char === '[') {
+            stack.push(char === '{' ? '}' : ']');
+          } else if (char === '}' || char === ']') {
+            if (stack.length === 0 || stack.pop() !== char) {
+              return false;
+            }
+          }
+        }
+        
+        // Don't consider completable if in middle of string
+        if (inString) return false;
+        
+        // If we have unclosed brackets, it could be completed
+        return stack.length > 0;
+      } catch {
+        return false;
+      }
     }
   }, [extractedJsonData]);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -183,10 +220,11 @@ export function SummaryDisplay({
               </div>
             ) : activeTab === 'json' ? (
               <div className="p-3 sm:p-6 h-[calc(100%-40px)]">
-                <JsonTreeTab
+                <EnhancedJsonTreeTab
                   jsonData={extractedJsonData}
                   maxHeight={maxHeight}
                   preventTruncation={preventTruncation}
+                  pollingInterval={300}
                 />
               </div>
             ) : null}

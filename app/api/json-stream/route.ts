@@ -51,7 +51,7 @@ export async function GET(request: Request) {
 }
 
 async function streamJson(
-  writer: WritableStreamDefaultWriter<any>,
+  writer: WritableStreamDefaultWriter<Uint8Array>,
   delay: number,
   mode: string
 ) {
@@ -71,12 +71,12 @@ async function streamJson(
       await new Promise(resolve => setTimeout(resolve, delay));
     }
     
-    // If valid mode, ensure we close properly
+    // Handle different modes
     if (mode === 'valid') {
+      // Valid mode already handled by sending the complete JSON
+    } else if (mode === 'corrupt') {
       // For corrupt mode, append invalid content at the end
-      if (mode === 'corrupt') {
-        await writer.write(encoder.encode('"unclosed_string'));
-      }
+      await writer.write(encoder.encode('"unclosed_string'));
     }
   } catch (error) {
     console.error('Error streaming JSON:', error);

@@ -188,7 +188,7 @@ export default function SimpleJsonDemo() {
         <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
           <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md border border-blue-200 dark:border-blue-700">
             <p className="text-sm">
-              <strong>Auto-completion feature:</strong> This validator recognizes JSON that's incomplete but well-structured, 
+              <strong>Auto-completion feature:</strong> This validator recognizes JSON that&apos;s incomplete but well-structured, 
               completing it by adding missing closing parentheses, brackets, or braces.
             </p>
           </div>
@@ -245,10 +245,10 @@ function isCompletableJson(str) {
           <p>Key benefits of this approach:</p>
           <ul>
             <li>Simplicity: Clear, concise, and easy to understand</li>
-            <li>Efficiency: Uses the browser's native JSON parser</li>
+            <li>Efficiency: Uses the browser&apos;s native JSON parser</li>
             <li>Reusability: Can be used anywhere in your code</li>
             <li>Forgiving: Handles incomplete but well-structured JSON</li>
-            <li>Streaming-friendly: Works with JSON that's still being received</li>
+            <li>Streaming-friendly: Works with JSON that&apos;s still being received</li>
             <li>Lightweight: No complex dependencies</li>
             <li>Visual: Shows the completed JSON with added closing brackets</li>
           </ul>
