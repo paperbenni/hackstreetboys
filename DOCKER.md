@@ -6,7 +6,7 @@ This document provides instructions for deploying the HackStreetBoys application
 
 - Docker installed on your system
 - Docker Compose installed on your system
-- An OpenRouter API key (for PDF-to-Haiku functionality)
+- An OpenRouter API key (for PDF processing functionality)
 
 ## Quick Start
 

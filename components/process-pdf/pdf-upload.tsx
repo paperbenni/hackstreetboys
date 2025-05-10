@@ -93,7 +93,7 @@ export function PdfUpload({ onPdfProcessedAction, onProcessingStartAction, onFil
       const formData = new FormData();
       formData.append("file", selectedFile);
 
-      const response = await fetch("/api/pdf-to-haiku", {
+      const response = await fetch("/api/process-pdf", {
         method: "POST",
         body: formData,
       });
@@ -138,7 +138,7 @@ export function PdfUpload({ onPdfProcessedAction, onProcessingStartAction, onFil
       <Card className="w-full border-blue-200 dark:border-blue-800 bg-white/70 dark:bg-blue-950/30">
         <CardHeader>
           <CardTitle className="text-xl text-blue-800 dark:text-blue-300">
-            PDF to Summary
+            Process Documents
           </CardTitle>
           <CardDescription>
             Upload a PDF document and generate a concise summary of its content

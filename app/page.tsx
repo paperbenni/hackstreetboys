@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { PdfUpload } from "@/components/pdf-to-process/pdf-upload";
-import { PdfViewer } from "@/components/pdf-to-process/pdf-viewer";
-import { SummaryDisplay } from "@/components/pdf-to-process/summary-display";
+import { PdfUpload } from "@/components/process-pdf/pdf-upload";
+import { PdfViewer } from "@/components/process-pdf/pdf-viewer";
+import { SummaryDisplay } from "@/components/process-pdf/summary-display";
 import { ApiKeyWarning } from "@/components/api-key-warning";
 import { Button } from "@/components/ui/button";
 import { RefreshCcw } from "lucide-react";
