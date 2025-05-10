@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "OpenRouter Demo",
-  description: "A beautiful blue-themed OpenRouter application",
+  title: "Document Processor",
+  description: "Process documents with AI powered by OpenRouter",
 };
 
 export const viewport = {

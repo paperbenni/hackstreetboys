@@ -1,66 +1,84 @@
 "use client";
 
 import { useState } from "react";
-
-import { PromptForm } from "@/components/prompt/prompt-form";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { ResponseDisplay } from "@/components/prompt/response-display";
+import { PdfUpload } from "@/components/pdf-to-process/pdf-upload";
+import { PdfViewer } from "@/components/pdf-to-process/pdf-viewer";
+import { SummaryDisplay } from "@/components/pdf-to-process/summary-display";
 import { ApiKeyWarning } from "@/components/api-key-warning";
+import { Button } from "@/components/ui/button";
+import { RefreshCcw } from "lucide-react";
 
-export default function Home() {
-  const [response, setResponse] = useState<string>("");
-  const [responseModel, setResponseModel] = useState<string>("");
+export default function ProcessDocumentPage() {
+  const [summary, setSummary] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [responseTimestamp, setResponseTimestamp] = useState<Date | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-  const handleSubmitPrompt = (model: string) => {
+  const handleProcessingStart = () => {
     setIsLoading(true);
-    setResponseModel(model);
   };
 
-  const handleResponse = (text: string) => {
-    setResponse(text);
+  const handlePdfProcessed = (summaryText: string) => {
+    setSummary(summaryText);
     setIsLoading(false);
-    setResponseTimestamp(new Date());
+  };
+
+  const handleFileSelected = (file: File | null) => {
+    setSelectedFile(file);
+  };
+
+  const handleNewSummary = () => {
+    setSummary("");
+    setIsLoading(false);
+    // Keep the file selected so user can still see the PDF
   };
 
   return (
-    <div className="grid grid-rows-[1fr_20px] items-center justify-items-center min-h-[calc(100vh-64px)] p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)] bg-gradient-to-b from-blue-100 to-blue-200 dark:from-blue-950 dark:to-blue-900">
-      <main className="flex flex-col gap-[32px] row-start-1 items-center w-full max-w-4xl bg-white/50 dark:bg-black/20 p-8 rounded-xl shadow-lg backdrop-blur-sm border border-blue-200 dark:border-blue-800">
+    <div className="grid grid-rows-[1fr_20px] items-start justify-items-center min-h-[calc(100vh-64px)] p-4 pb-20 gap-8 sm:p-8 font-[family-name:var(--font-geist-sans)] bg-gradient-to-b from-blue-100 to-blue-200 dark:from-blue-950 dark:to-blue-900 overflow-y-auto">
+      <main className="flex flex-col gap-[24px] row-start-1 items-center w-full max-w-7xl bg-white/50 dark:bg-black/20 p-4 md:p-6 rounded-xl shadow-lg backdrop-blur-sm border border-blue-200 dark:border-blue-800">
         <ApiKeyWarning />
 
-        <Card className="w-full mt-8 border-blue-200 dark:border-blue-800 bg-white/70 dark:bg-blue-950/30">
-          <CardHeader>
-            <CardTitle className="text-xl text-blue-800 dark:text-blue-300">
-              Talk to AI Models via OpenRouter
-            </CardTitle>
-            <CardDescription>
-              Send prompts to leading AI models from Anthropic, OpenAI, Google,
-              and more through a single API
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <PromptForm
-              onResponseAction={handleResponse}
-              onSubmitAction={handleSubmitPrompt}
+        <div className="w-full">
+          <PdfUpload 
+              onPdfProcessedAction={handlePdfProcessed}
+              onProcessingStartAction={handleProcessingStart}
+              onFileSelectedAction={handleFileSelected}
             />
+        </div>
+        
+        {(selectedFile || summary || isLoading) && (
+          <div className="w-full flex flex-col lg:flex-row gap-4 lg:gap-6 mt-2">
+            {selectedFile && (
+              <div className={`w-full ${(summary || isLoading) ? 'lg:w-1/2' : 'lg:w-full'}`}>
+                <h2 className="text-lg font-medium text-blue-800 dark:text-blue-300 mb-2 lg:mb-4">Document Preview</h2>
+                <PdfViewer file={selectedFile} />
+              </div>
+            )}
 
-            <ResponseDisplay
-              response={response}
-              modelId={responseModel}
-              timestamp={responseTimestamp || undefined}
-              isLoading={isLoading}
-            />
-          </CardContent>
-        </Card>
+            {(summary || isLoading) && (
+              <div className={`w-full ${selectedFile ? 'lg:w-1/2' : 'lg:w-full'} mt-4 lg:mt-0`}>
+                <div className="flex items-center justify-between mb-2 lg:mb-4">
+                  <h2 className="text-lg font-medium text-blue-800 dark:text-blue-300">Document Summary</h2>
+                  {summary && !isLoading && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleNewSummary}
+                      className="flex items-center gap-1 text-sm border-blue-200 dark:border-blue-800"
+                    >
+                      <RefreshCcw className="h-3.5 w-3.5" /> New Summary
+                    </Button>
+                  )}
+                </div>
+                <SummaryDisplay
+                  summary={summary}
+                  isLoading={isLoading}
+                />
+              </div>
+            )}
+          </div>
+        )}
       </main>
-      <footer className="row-start-3 py-3 px-6"></footer>
+      <footer className="row-start-2 py-3 px-6"></footer>
     </div>
   );
 }
