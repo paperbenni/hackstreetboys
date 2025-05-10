@@ -10,6 +10,7 @@ interface ResponseDisplayProps {
   isLoading?: boolean;
   maxHeight?: string;
   preventTruncation?: boolean;
+  maxContentSize?: number;
 }
 
 export function ResponseDisplay({ 
@@ -18,7 +19,8 @@ export function ResponseDisplay({
   timestamp = new Date(),
   isLoading = false,
   maxHeight = "70vh",
-  preventTruncation = true
+  preventTruncation = true,
+  maxContentSize = 100000000 // Default to 100MB to handle large responses
 }: ResponseDisplayProps) {
   if (!response && !isLoading) {
     return null;
@@ -55,6 +57,7 @@ export function ResponseDisplay({
             className="text-gray-700 dark:text-gray-300 prose-sm md:prose-base"
             maxHeight={maxHeight}
             preventTruncation={preventTruncation}
+            maxContentSize={maxContentSize}
           />
         )}
       </CardContent>

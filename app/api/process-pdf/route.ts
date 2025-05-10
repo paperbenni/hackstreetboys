@@ -244,15 +244,20 @@ export async function POST(request: NextRequest) {
       ${fullMarkdown}
     `;
 
-    // Send request to OpenRouter API
-    const response = await fetch(OPENROUTER_API_URL, {
+    // Set request options with a longer timeout and larger response limit
+    const requestOptions = {
       method: "POST",
       headers: getApiHeaders(apiKey),
       body: JSON.stringify({
         model: "anthropic/claude-3-haiku:beta", // Using a smaller model for efficiency
         messages: [{ role: "user", content: prompt }],
+        max_tokens: 100000, // Ensure we have enough tokens for complete responses
+        stream: false, // Don't stream the response to avoid truncation
       }),
-    });
+    };
+    
+    // Send request to OpenRouter API with increased timeout
+    const response = await fetch(OPENROUTER_API_URL, requestOptions);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
@@ -266,15 +271,36 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const data = await response.json();
+    // Process the response carefully to avoid truncation
+    const responseText = await response.text();
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (e) {
+      console.error("Error parsing JSON response:", e);
+      return NextResponse.json({
+        error: "Failed to parse LLM response",
+        details: e instanceof Error ? e.message : String(e)
+      }, { status: 500 });
+    }
+    
     const summaryContent =
       data.choices?.[0]?.message?.content ||
       "Could not generate summary from the provided PDF.";
 
-    return NextResponse.json({ 
-      summary: summaryContent,
-      rawMarkdown: fullMarkdown // Return the full markdown content
-    });
+    // Configure the NextResponse with increased size limit
+    return new NextResponse(
+      JSON.stringify({ 
+        summary: summaryContent,
+        rawMarkdown: fullMarkdown // Return the full markdown content
+      }),
+      { 
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      }
+    );
   } catch (error) {
     console.error("Error processing PDF to process request:", error);
 

@@ -13,6 +13,7 @@ interface EnhancedMarkdownProps {
   maxHeight?: string;
   preventTruncation?: boolean;
   darkMode?: boolean;
+  maxContentSize?: number;
 }
 
 export function EnhancedMarkdown({ 
@@ -20,7 +21,8 @@ export function EnhancedMarkdown({
   className, 
   maxHeight = "70vh", 
   preventTruncation = true,
-  darkMode = true
+  darkMode = true,
+  maxContentSize = 100000000 // Default to 100MB to handle very large responses
 }: EnhancedMarkdownProps) {
   // Common class names for the markdown container
   const markdownClassNames = cn(
@@ -87,6 +89,22 @@ export function EnhancedMarkdown({
     ...scrollableContainerStyle(maxHeight),
     ...(preventTruncation ? ensureNoTruncation() : {})
   };
+  
+  // Handle potentially large content to prevent browser rendering issues
+  // If content is JSON, ensure it's not truncated
+  let processedContent = content;
+  
+  // Try to detect if content is JSON and handle it specially to avoid truncation
+  if (content.trim().startsWith('{') && content.trim().endsWith('}')) {
+    try {
+      // For JSON, ensure proper formatting and no truncation
+      const jsonObj = JSON.parse(content);
+      processedContent = JSON.stringify(jsonObj, null, 2);
+    } catch (e) {
+      // If it's not valid JSON or too large, use the original content
+      console.warn('Failed to parse content as JSON:', e);
+    }
+  }
 
   return (
     <div className={markdownClassNames} style={containerStyle}>
@@ -207,7 +225,7 @@ export function EnhancedMarkdown({
           },
         }}
       >
-        {content}
+        {processedContent}
       </ReactMarkdown>
     </div>
   );

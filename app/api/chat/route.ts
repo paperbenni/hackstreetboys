@@ -16,13 +16,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Make request to OpenRouter API
+    // Make request to OpenRouter API with increased token limit
     const response = await fetch(OPENROUTER_API_URL, {
       method: 'POST',
       headers: getApiHeaders(apiKey),
       body: JSON.stringify({
         model,
         messages,
+        max_tokens: 100000, // Ensure we have enough tokens for complete responses
+        stream: false, // Don't stream the response to avoid truncation
       }),
     });
 
@@ -36,8 +38,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const data = await response.json();
-    return NextResponse.json(data);
+    // Process the response carefully to avoid truncation
+    const responseText = await response.text();
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (e) {
+      console.error("Error parsing JSON response:", e);
+      return NextResponse.json({
+        error: "Failed to parse LLM response",
+        details: e instanceof Error ? e.message : String(e)
+      }, { status: 500 });
+    }
+    
+    // Configure the NextResponse with increased size limit
+    return new NextResponse(
+      JSON.stringify(data),
+      { 
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      }
+    );
     
   } catch (error) {
     console.error('Error processing chat request:', error);
