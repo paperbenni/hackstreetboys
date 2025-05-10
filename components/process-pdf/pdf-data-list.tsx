@@ -5,13 +5,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { OrderItemCategory } from "./order-item-category";
 import { Button } from "@/components/ui/button";
 import { extractJsonFromMarkdown } from "@/lib/utils";
-import { Download } from "lucide-react";
+
 import { OrderItemDialog } from "./order-item-dialog";
 import { OrderItemDisplay } from "./order-item-display";
 import DebugTab from "@/components/DebugTab";
 import { Order, OrderCategory, OrderItemUnion, isOrder } from "./types";
 import { OrderSummary } from "./order-summary";
 import { parse } from "js2xmlparser";
+import { ExportConfig, ExportConfigForm } from "./export-config";
 
 interface PDFDataListProps {
   data: string;
@@ -252,32 +253,23 @@ export function PDFDataList({
     return <OrderSummary summary={summary} title="Order Items Summary" />;
   };
 
+  // Flatten the parsed data to get only Order items
+  const flattenOrderItems = (items: OrderItemUnion[]): Order[] => {
+    return items.reduce<Order[]>((acc, item) => {
+      if (isOrder(item)) {
+        acc.push(item);
+      } else if (item.content) {
+        // Recursively flatten items in categories
+        acc.push(...flattenOrderItems(item.content));
+      }
+      return acc;
+    }, []);
+  };
+
   // Handle export functionality
-  const handleExport = () => {
-    // Flatten the parsed data to get only Order items
-    const flattenOrderItems = (items: OrderItemUnion[]): Order[] => {
-      return items.reduce<Order[]>((acc, item) => {
-        if (isOrder(item)) {
-          acc.push(item);
-        } else if (item.content) {
-          // Recursively flatten items in categories
-          acc.push(...flattenOrderItems(item.content));
-        }
-        return acc;
-      }, []);
-    };
-
-    // Get flat array of orders
-    const flatOrders = flattenOrderItems(parsedData);
-
+  const handleExport = (config: ExportConfig) => {
     // Parse the data and copy to clipboard
-    const xmlString = parse("order", {
-      customerId: 1000,
-      type: "A",
-      shippingConditionId: 2,
-      commission: "Sägemühle",
-      items: flatOrders,
-    });
+    const xmlString = parse("order", config);
     navigator.clipboard
       .writeText(xmlString)
       .then(() => {
@@ -339,16 +331,17 @@ export function PDFDataList({
             <div className="max-h-[70vh] overflow-y-auto overflow-x-hidden">
               {/* Control buttons */}
               <div className="p-4 flex justify-between sticky top-0 z-10 bg-white dark:bg-slate-950 shadow-md">
-                <div className="flex items-center">
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={handleExport}
-                    className="text-xs h-8 flex items-center gap-2 transition-all duration-200 hover:scale-105"
-                  >
-                    <Download className="h-4.5 w-4.5" />
-                    Export
-                  </Button>
+                <div className="flex items-center flex-col">
+                  <ExportConfigForm 
+                    items={flattenOrderItems(parsedData)}
+                    onExportAction={handleExport}
+                    defaultConfig={{
+                      customerId: 1000,
+                      type: "A",
+                      shippingConditionId: 2,
+                      commission: "Sägemühle"
+                    }}
+                  />
                   {copyStatus && (
                     <span className="ml-2 text-xs text-green-600 dark:text-green-400 animate-fade-in">
                       {copyStatus}
