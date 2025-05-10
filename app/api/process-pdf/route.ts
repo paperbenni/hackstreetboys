@@ -81,7 +81,8 @@ export async function POST(request: NextRequest) {
         ? pdfMarkdown.substring(0, 4000) + "..."
         : pdfMarkdown;
 
-    // Create a prompt for generating a summary from the PDF markdown content
+    // Prompt for extracting the items
+    // This is just a placeholder for now
     const prompt = `
       Create a poem from this PDF
 

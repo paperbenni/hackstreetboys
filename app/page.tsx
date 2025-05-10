@@ -38,41 +38,46 @@ export default function ProcessDocumentPage() {
         <ApiKeyWarning />
 
         <div className="w-full">
-          <PdfUpload 
-              onPdfProcessedAction={handlePdfProcessed}
-              onProcessingStartAction={handleProcessingStart}
-              onFileSelectedAction={handleFileSelected}
-            />
+          <PdfUpload
+            onPdfProcessedAction={handlePdfProcessed}
+            onProcessingStartAction={handleProcessingStart}
+            onFileSelectedAction={handleFileSelected}
+          />
         </div>
-        
+
         {(selectedFile || summary || isLoading) && (
           <div className="w-full flex flex-col lg:flex-row gap-4 lg:gap-6 mt-2">
             {selectedFile && (
-              <div className={`w-full ${(summary || isLoading) ? 'lg:w-1/2' : 'lg:w-full'}`}>
-                <h2 className="text-lg font-medium text-blue-800 dark:text-blue-300 mb-2 lg:mb-4">Document Preview</h2>
+              <div
+                className={`w-full ${summary || isLoading ? "lg:w-1/2" : "lg:w-full"}`}
+              >
+                <h2 className="text-lg font-medium text-blue-800 dark:text-blue-300 mb-2 lg:mb-4">
+                  Document View
+                </h2>
                 <PdfViewer file={selectedFile} />
               </div>
             )}
 
             {(summary || isLoading) && (
-              <div className={`w-full ${selectedFile ? 'lg:w-1/2' : 'lg:w-full'} mt-4 lg:mt-0`}>
+              <div
+                className={`w-full ${selectedFile ? "lg:w-1/2" : "lg:w-full"} mt-4 lg:mt-0`}
+              >
                 <div className="flex items-center justify-between mb-2 lg:mb-4">
-                  <h2 className="text-lg font-medium text-blue-800 dark:text-blue-300">Document Summary</h2>
+                  <h2 className="text-lg font-medium text-blue-800 dark:text-blue-300">
+                    Items
+                  </h2>
                   {summary && !isLoading && (
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={handleNewSummary}
                       className="flex items-center gap-1 text-sm border-blue-200 dark:border-blue-800"
                     >
-                      <RefreshCcw className="h-3.5 w-3.5" /> New Summary
+                      <RefreshCcw className="h-3.5 w-3.5" /> Restart
                     </Button>
                   )}
                 </div>
-                <SummaryDisplay
-                  summary={summary}
-                  isLoading={isLoading}
-                />
+                <SummaryDisplay summary={summary} isLoading={isLoading} />
               </div>
             )}
           </div>

@@ -2,7 +2,13 @@
 
 import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Loader2, Upload, FileText, AlertTriangle } from "lucide-react";
 
 interface PdfUploadProps {
@@ -11,7 +17,11 @@ interface PdfUploadProps {
   onFileSelectedAction: (file: File | null) => void;
 }
 
-export function PdfUpload({ onPdfProcessedAction, onProcessingStartAction, onFileSelectedAction }: PdfUploadProps) {
+export function PdfUpload({
+  onPdfProcessedAction,
+  onProcessingStartAction,
+  onFileSelectedAction,
+}: PdfUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,7 +48,10 @@ export function PdfUpload({ onPdfProcessedAction, onProcessingStartAction, onFil
 
   const validateFile = (file: File): boolean => {
     // Check if file is a PDF
-    if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith('.pdf')) {
+    if (
+      file.type !== "application/pdf" &&
+      !file.name.toLowerCase().endsWith(".pdf")
+    ) {
       setError("Only PDF files are accepted");
       return false;
     }
@@ -56,7 +69,7 @@ export function PdfUpload({ onPdfProcessedAction, onProcessingStartAction, onFil
 
   const handleFileSelect = (file: File) => {
     setError(null);
-    
+
     if (validateFile(file)) {
       setSelectedFile(file);
       onFileSelectedAction(file);
@@ -67,7 +80,7 @@ export function PdfUpload({ onPdfProcessedAction, onProcessingStartAction, onFil
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
-    
+
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       handleFileSelect(e.dataTransfer.files[0]);
     }
@@ -89,7 +102,7 @@ export function PdfUpload({ onPdfProcessedAction, onProcessingStartAction, onFil
     try {
       setIsUploading(true);
       onProcessingStartAction();
-      
+
       const formData = new FormData();
       formData.append("file", selectedFile);
 
@@ -100,11 +113,13 @@ export function PdfUpload({ onPdfProcessedAction, onProcessingStartAction, onFil
 
       if (!response.ok) {
         const errData = await response.json().catch(() => null);
-        throw new Error(errData?.error || `Request failed with status ${response.status}`);
+        throw new Error(
+          errData?.error || `Request failed with status ${response.status}`,
+        );
       }
 
       const data = await response.json();
-      
+
       if (data.summary) {
         onPdfProcessedAction(data.summary);
         // Don't reset the selected file after successful processing
@@ -117,10 +132,17 @@ export function PdfUpload({ onPdfProcessedAction, onProcessingStartAction, onFil
       // Handle specific error messages from the server
       if (err instanceof Error) {
         const errorMsg = err.message;
-        if (errorMsg.includes("empty") || errorMsg.includes("too little text")) {
-          setError("The PDF appears to be empty or contains too little text to generate a summary.");
+        if (
+          errorMsg.includes("empty") ||
+          errorMsg.includes("too little text")
+        ) {
+          setError(
+            "The PDF appears to be empty or contains too little text to generate a summary.",
+          );
         } else if (errorMsg.includes("PDF parsing failed")) {
-          setError("Failed to read the PDF. The file might be corrupted or password-protected.");
+          setError(
+            "Failed to read the PDF. The file might be corrupted or password-protected.",
+          );
         } else {
           setError(errorMsg);
         }
@@ -141,14 +163,14 @@ export function PdfUpload({ onPdfProcessedAction, onProcessingStartAction, onFil
             Process Documents
           </CardTitle>
           <CardDescription>
-            Upload a PDF document and generate a concise summary of its content
+            Upload a PDF document extract the orders.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div
             className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-              isDragging 
-                ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20" 
+              isDragging
+                ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
                 : "border-blue-200 dark:border-blue-800 hover:border-blue-300 dark:hover:border-blue-700"
             }`}
             onDragOver={handleDragOver}
@@ -179,7 +201,9 @@ export function PdfUpload({ onPdfProcessedAction, onProcessingStartAction, onFil
                 <>
                   <Upload className="h-12 w-12 text-blue-600 dark:text-blue-400" />
                   <div>
-                    <p className="font-medium">Drop your PDF here or click to browse</p>
+                    <p className="font-medium">
+                      Drop your PDF here or click to browse
+                    </p>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
                       Maximum file size: 10MB
                     </p>
@@ -220,7 +244,7 @@ export function PdfUpload({ onPdfProcessedAction, onProcessingStartAction, onFil
                       Processing
                     </>
                   ) : (
-                    "Generate Summary"
+                    "Process"
                   )}
                 </Button>
               </>
