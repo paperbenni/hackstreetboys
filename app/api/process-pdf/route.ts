@@ -92,6 +92,11 @@ export async function POST(request: NextRequest) {
       Output nothing else beside the json. Convert the entire list, do not
       leave out any orders or abbreviate anything.
 
+      # Tree Structure
+
+      The tree structure explained below may capture numerical position (number) of the parent, or
+      sometimes the parent is not numerical but a string. Then do use the string as the parent. If
+      there is no tree structure, use the root node for the parent.
 
       # Interfaces
 
