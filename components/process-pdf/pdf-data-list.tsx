@@ -209,8 +209,8 @@ export function PDFDataList({
   };
 
   // Render a single order item
-  const renderOrderItem = (item: Order) => {
-    return <OrderItemDisplay item={item} onEdit={setEditingItem} />;
+  const renderOrderItem = (item: Order, level: number = 0) => {
+    return <OrderItemDisplay item={item} onEdit={setEditingItem} level={level} />;
   };
 
   // Handle updating an order item
@@ -290,7 +290,7 @@ export function PDFDataList({
           variant={activeTab === "data" ? "default" : "outline"}
           size="sm"
           onClick={() => setActiveTab("data")}
-          className="text-xs px-3"
+          className="text-xs px-4 py-2 transition-all duration-200 hover:scale-105"
         >
           Data View
         </Button>
@@ -299,27 +299,27 @@ export function PDFDataList({
             variant={activeTab === "debug" ? "default" : "outline"}
             size="sm"
             onClick={() => setActiveTab("debug")}
-            className="text-xs px-3"
+            className="text-xs px-4 py-2 transition-all duration-200 hover:scale-105"
           >
             Debug View
           </Button>
         )}
       </div>
 
-      <Card className="flex-grow overflow-hidden">
-        <CardContent className="p-0 h-full">
+      <Card className="flex-grow overflow-hidden shadow-lg">
+        <CardContent className="p-0 h-full space-y-3">
           {isLoading ? (
-            <div className="p-4 animate-pulse">
-              <div className="h-4 w-3/4 bg-slate-200 dark:bg-slate-700 rounded mb-2"></div>
-              <div className="h-4 w-1/2 bg-slate-200 dark:bg-slate-700 rounded mb-2"></div>
-              <div className="h-4 w-2/3 bg-slate-200 dark:bg-slate-700 rounded"></div>
+            <div className="p-6 animate-pulse">
+              <div className="h-5 w-3/4 bg-slate-200 dark:bg-slate-700 rounded mb-3"></div>
+              <div className="h-5 w-1/2 bg-slate-200 dark:bg-slate-700 rounded mb-3"></div>
+              <div className="h-5 w-2/3 bg-slate-200 dark:bg-slate-700 rounded"></div>
             </div>
           ) : error || jsonError ? (
-            <div className="p-4 text-red-600 dark:text-red-400">
+            <div className="p-6 text-red-600 dark:text-red-400 font-medium">
               {error || jsonError}
             </div>
           ) : activeTab === "debug" ? (
-            <div className="p-4">
+            <div className="p-6">
               <DebugTab
                 markdown={rawMarkdown || data}
                 maxHeight={maxHeight}
@@ -329,15 +329,15 @@ export function PDFDataList({
           ) : (
             <div className="max-h-[70vh] overflow-y-auto overflow-x-hidden">
               {/* Control buttons */}
-              <div className="p-2 flex justify-between sticky top-0 z-10 bg-white dark:bg-slate-950 shadow-sm">
+              <div className="p-4 flex justify-between sticky top-0 z-10 bg-white dark:bg-slate-950 shadow-md">
                 <div className="flex items-center">
                   <Button
                     variant="default"
                     size="sm"
                     onClick={handleExport}
-                    className="text-xs h-7 flex items-center gap-1"
+                    className="text-xs h-8 flex items-center gap-2 transition-all duration-200 hover:scale-105"
                   >
-                    <Download className="h-3.5 w-3.5" />
+                    <Download className="h-4.5 w-4.5" />
                     Export
                   </Button>
                   {copyStatus && (
@@ -346,12 +346,12 @@ export function PDFDataList({
                     </span>
                   )}
                 </div>
-                <div className="flex space-x-2">
+                <div className="flex space-x-3">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={expandAll}
-                    className="text-xs h-7"
+                    className="text-xs h-8 px-4 transition-all duration-200 hover:bg-slate-200 dark:hover:bg-slate-700"
                   >
                     Expand All
                   </Button>
@@ -359,7 +359,7 @@ export function PDFDataList({
                     variant="outline"
                     size="sm"
                     onClick={collapseAll}
-                    className="text-xs h-7"
+                    className="text-xs h-8 px-4 transition-all duration-200 hover:bg-slate-200 dark:hover:bg-slate-700"
                   >
                     Collapse All
                   </Button>
@@ -367,21 +367,23 @@ export function PDFDataList({
               </div>
 
               {/* Data content */}
-              <div className="p-4">
+              <div className="p-6 space-y-5">
                 {parsedData.length > 0 ? (
                   <>
-                    <div className="mb-6">
+                    <div className="mb-8 space-y-5">
                       {parsedData.map((item, index) => (
                         <React.Fragment key={`root-${index}`}>
                           {isOrder(item)
-                            ? renderOrderItem(item)
+                            ? renderOrderItem(item, 0)
                             : renderCategory(item, "", 0)}
                         </React.Fragment>
                       ))}
                     </div>
 
                     {/* Summary section */}
-                    {renderSummary()}
+                    <div className="mt-8 pt-4 border-t">
+                      {renderSummary()}
+                    </div>
                   </>
                 ) : (
                   <div className="text-slate-500 dark:text-slate-400">

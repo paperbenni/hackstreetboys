@@ -8,7 +8,7 @@ interface OrderItemCategoryProps {
   level: number;
   expandedCategories: Set<string>;
   toggleCategory: (categoryPath: string) => void;
-  renderOrderItem: (item: Order) => React.ReactNode;
+  renderOrderItem: (item: Order, level?: number) => React.ReactNode;
   renderCategory: (category: OrderCategory, parentPath: string, level: number) => React.ReactNode;
 }
 
@@ -34,23 +34,25 @@ export function OrderItemCategory({
     ? category.content.filter((item) => !isOrder(item)).length
     : 0;
 
+  // Calculate indentation based on level - increase indent for each level
+  const paddingLeft = `${(level * 24) + 12}px`;
+
   return (
-    <div className="mb-1">
+    <div className="mb-3">
       <div
-        className={`flex items-center p-${
-          level * 0.5 + 2
-        } hover:bg-slate-50 dark:hover:bg-slate-800/30 rounded-md transition-colors cursor-pointer`}
+        className="flex items-center py-3 pr-3 hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded-md transition-all duration-200 cursor-pointer transform hover:translate-x-1"
+        style={{ paddingLeft }}
         onClick={() => toggleCategory(categoryPath)}
       >
-        <div className="mr-1 text-slate-400">
+        <div className="mr-2 text-slate-400">
           {isExpanded ? (
-            <ChevronDown className="h-4 w-4" />
+            <ChevronDown className="h-5 w-5" />
           ) : (
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-5 w-5" />
           )}
         </div>
-        <Folder className="h-4 w-4 mr-2 text-slate-500" />
-        <span className="font-medium text-sm flex-grow">
+        <Folder className="h-5 w-5 mr-2 text-slate-500" />
+        <span className="font-medium text-sm flex-grow ml-1">
           {categoryName || "Unnamed Category"}
         </span>
         {hasItems && (
@@ -70,11 +72,11 @@ export function OrderItemCategory({
       </div>
 
       {isExpanded && hasItems && (
-        <div className={`ml-${level * 2 + 4}`}>
+        <div className="mt-2 space-y-2" style={{ paddingLeft: `${(level * 24) + 36}px` }}>
           {category.content.map((subItem, index) => (
             <React.Fragment key={`${categoryPath}-${index}`}>
               {isOrder(subItem)
-                ? renderOrderItem(subItem)
+                ? renderOrderItem(subItem, level + 1)
                 : renderCategory(subItem, categoryPath, level + 1)}
             </React.Fragment>
           ))}

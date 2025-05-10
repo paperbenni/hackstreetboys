@@ -83,10 +83,10 @@ export function OrderSummary({ summary, title = "Summary by Category" }: OrderSu
   };
 
   return (
-    <div className="border-t border-slate-200 dark:border-slate-800 mt-5 pt-5">
-      <div className="flex items-center justify-between mb-4">
+    <div className="border-t border-slate-200 dark:border-slate-800 mt-6 pt-6">
+      <div className="flex items-center justify-between mb-6">
         <div className="flex items-center">
-          <BarChart2 className="h-4 w-4 mr-2 text-slate-500" />
+          <BarChart2 className="h-5 w-5 mr-2 text-slate-500" />
           <h3 className="text-sm font-medium">{title}</h3>
           <span className="ml-2 text-xs text-slate-500">
             ({totalItems} item{totalItems !== 1 ? 's' : ''} total)
@@ -96,7 +96,7 @@ export function OrderSummary({ summary, title = "Summary by Category" }: OrderSu
           <Button 
             variant="ghost" 
             size="sm" 
-            className="h-6 px-2 text-xs"
+            className="h-7 px-3 text-xs hover:bg-slate-200 dark:hover:bg-slate-700 transition-all duration-200"
             onClick={toggleAllCategories}
           >
             {expandedCategories.size === sortedGroups.length ? 'Collapse All' : 'Expand All'}
@@ -104,28 +104,28 @@ export function OrderSummary({ summary, title = "Summary by Category" }: OrderSu
           <Button 
             variant="ghost" 
             size="sm" 
-            className="h-6 w-6 p-0"
+            className="h-7 w-7 p-0 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all duration-200"
             onClick={() => setIsCollapsed(!isCollapsed)}
           >
-            {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            {isCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
           </Button>
         </div>
       </div>
       
       {!isCollapsed && (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {sortedGroups.map((category) => {
             const isExpanded = expandedCategories.has(category.name);
             return (
-              <div key={category.name} className="mb-3">
+              <div key={category.name} className="mb-4">
                 <div 
-                  className="flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/30 rounded-md p-1.5"
+                  className="flex items-center justify-between cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded-md p-2.5 transition-all duration-200 transform hover:translate-x-1"
                   onClick={() => toggleCategory(category.name)}
                 >
                   <div className="flex items-center">
                     {isExpanded ? 
-                      <ChevronDown className="h-3.5 w-3.5 mr-1.5 text-slate-400" /> : 
-                      <ChevronRight className="h-3.5 w-3.5 mr-1.5 text-slate-400" />
+                      <ChevronDown className="h-4.5 w-4.5 mr-2.5 text-slate-400" /> : 
+                        <ChevronRight className="h-4.5 w-4.5 mr-2.5 text-slate-400" />
                     }
                     <h4 className="text-xs font-medium text-slate-700 dark:text-slate-300">
                       {category.name}
@@ -137,11 +137,11 @@ export function OrderSummary({ summary, title = "Summary by Category" }: OrderSu
                 </div>
                 
                 {isExpanded && (
-                  <div className="space-y-1 ml-8 mt-2">
+                  <div className="space-y-2 ml-10 mt-3">
                     {category.items.map((item) => (
                       <div
                         key={item.sku}
-                        className="flex justify-between text-xs hover:bg-slate-50 dark:hover:bg-slate-800/30 px-3 py-1.5 rounded-sm"
+                        className="flex justify-between text-xs hover:bg-slate-100 dark:hover:bg-slate-800/50 px-4 py-2.5 rounded-sm transition-all duration-200 transform hover:translate-x-1"
                       >
                         <div className="flex-grow">
                           <span className="text-slate-500 mr-2">{item.sku}:</span>
