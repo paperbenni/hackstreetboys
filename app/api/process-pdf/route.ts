@@ -239,7 +239,7 @@ export async function POST(request: NextRequest) {
       ${fullMarkdown}
     `;
 
-    // Set request options with streaming enabled
+    // Set request options
     const requestOptions = {
       method: "POST",
       headers: getApiHeaders(apiKey),
@@ -277,23 +277,9 @@ export async function POST(request: NextRequest) {
 
     // If streaming is disabled, handle response normally
     if (disableStreaming) {
-      const responseText = await response.text();
-      let data;
-      try {
-        data = JSON.parse(responseText);
-      } catch (e) {
-        console.error("Error parsing JSON response:", e);
-        return new Response(
-          JSON.stringify({
-            error: "Failed to parse LLM response",
-            details: e instanceof Error ? e.message : String(e)
-          }),
-          { status: 500, headers: { 'Content-Type': 'application/json' } }
-        );
-      }
-      
+      const responseData = await response.json();
       const summaryContent =
-        data.choices?.[0]?.message?.content ||
+        responseData.choices?.[0]?.message?.content ||
         "Could not generate summary from the provided PDF.";
         
       return new Response(
@@ -312,6 +298,7 @@ export async function POST(request: NextRequest) {
 
     // Create a streaming response
     const encoder = new TextEncoder();
+
     const customReadable = new ReadableStream({
       async start(controller) {
         try {
@@ -326,46 +313,57 @@ export async function POST(request: NextRequest) {
           if (!reader) throw new Error("Response body is null");
 
           let summaryContent = "";
+          let buffer = "";
+          const decoder = new TextDecoder();
           
-          // Read chunks from the stream
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            
-            // Convert the chunk to text
-            const chunk = new TextDecoder().decode(value);
-            
-            try {
-              // OpenRouter sends each chunk as a JSON object with a 'data: ' prefix
-              const lines = chunk.split("\n").filter(line => line.trim());
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
               
-              for (const line of lines) {
-                // Skip empty lines and '[DONE]' messages
+              // Append new chunk to buffer with streaming mode
+              buffer += decoder.decode(value, { stream: true });
+              
+              // Process complete lines from buffer
+              while (true) {
+                const lineEnd = buffer.indexOf('\n');
+                if (lineEnd === -1) break;
+                
+                const line = buffer.slice(0, lineEnd).trim();
+                buffer = buffer.slice(lineEnd + 1);
+                
                 if (!line || line === 'data: [DONE]') continue;
-
-                // Remove 'data: ' prefix if it exists
-                const data = line.startsWith('data: ') ? JSON.parse(line.slice(6)) : JSON.parse(line);
-
-                if (data.choices && data.choices[0]) {
-                  // Extract the content delta
-                  const contentDelta = data.choices[0]?.delta?.content || data.choices[0]?.message?.content || '';
+                
+                if (line.startsWith('data: ')) {
+                  const data = line.slice(6);
                   
-                  if (contentDelta) {
-                    // Append to the accumulated summary content
-                    summaryContent += contentDelta;
+                  // Skip OpenRouter processing messages
+                  if (data.includes('OPENROUTER PROCESSING')) continue;
+                  
+                  try {
+                    const parsed = JSON.parse(data);
+                    const contentDelta = parsed.choices[0]?.delta?.content || 
+                                        parsed.choices[0]?.message?.content || '';
                     
-                    // Send delta to the client
-                    controller.enqueue(encoder.encode(JSON.stringify({ 
-                      type: 'delta',
-                      content: contentDelta 
-                    }) + '\n'));
+                    if (contentDelta) {
+                      // Append to the accumulated summary content
+                      summaryContent += contentDelta;
+                      
+                      // Send delta to the client
+                      controller.enqueue(encoder.encode(JSON.stringify({ 
+                        type: 'delta',
+                        content: contentDelta 
+                      }) + '\n'));
+                    }
+                  } catch (e) {
+                    // Ignore invalid JSON
+                    console.error('Error parsing JSON:', e instanceof Error ? e.message : String(e));
                   }
                 }
               }
-            } catch (err) {
-              console.error('Error parsing chunk:', chunk, err);
-              // Continue processing other chunks even if one fails
             }
+          } finally {
+            reader.cancel();
           }
           
           // Send complete message when done
