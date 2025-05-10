@@ -8,9 +8,10 @@ import { Loader2, Upload, FileText, AlertTriangle } from "lucide-react";
 interface PdfUploadProps {
   onPdfProcessedAction: (summary: string) => void;
   onProcessingStartAction: () => void;
+  onFileSelected: (file: File | null) => void;
 }
 
-export function PdfUpload({ onPdfProcessedAction, onProcessingStartAction }: PdfUploadProps) {
+export function PdfUpload({ onPdfProcessedAction, onProcessingStartAction, onFileSelected }: PdfUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -20,6 +21,7 @@ export function PdfUpload({ onPdfProcessedAction, onProcessingStartAction }: Pdf
   const resetState = () => {
     setSelectedFile(null);
     setError(null);
+    onFileSelected(null);
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -57,6 +59,7 @@ export function PdfUpload({ onPdfProcessedAction, onProcessingStartAction }: Pdf
     
     if (validateFile(file)) {
       setSelectedFile(file);
+      onFileSelected(file);
     }
   };
 
