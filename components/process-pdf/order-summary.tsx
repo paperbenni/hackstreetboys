@@ -83,8 +83,8 @@ export function OrderSummary({ summary, title = "Summary by Category" }: OrderSu
   };
 
   return (
-    <div className="border-t border-slate-200 dark:border-slate-800 mt-4 pt-4">
-      <div className="flex items-center justify-between mb-3">
+    <div className="border-t border-slate-200 dark:border-slate-800 mt-5 pt-5">
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center">
           <BarChart2 className="h-4 w-4 mr-2 text-slate-500" />
           <h3 className="text-sm font-medium">{title}</h3>
@@ -137,14 +137,14 @@ export function OrderSummary({ summary, title = "Summary by Category" }: OrderSu
                 </div>
                 
                 {isExpanded && (
-                  <div className="space-y-1 ml-6 mt-1">
+                  <div className="space-y-1 ml-8 mt-2">
                     {category.items.map((item) => (
                       <div
                         key={item.sku}
-                        className="flex justify-between text-xs pb-1 hover:bg-slate-50 dark:hover:bg-slate-800/30 px-2 py-1 rounded-sm"
+                        className="flex justify-between text-xs hover:bg-slate-50 dark:hover:bg-slate-800/30 px-3 py-1.5 rounded-sm"
                       >
                         <div className="flex-grow">
-                          <span className="text-slate-500 mr-1">{item.sku}:</span>
+                          <span className="text-slate-500 mr-2">{item.sku}:</span>
                           {item.name}
                         </div>
                         <div className="text-right font-medium">

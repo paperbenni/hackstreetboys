@@ -298,20 +298,20 @@ export function PdfUpload({
   return (
     <div className="w-full">
       <Card className="w-full border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-900/30">
-        <CardHeader>
+        <CardHeader className="pb-5">
           <CardTitle className="text-xl text-slate-800 dark:text-slate-300">
             Process Documents
           </CardTitle>
-          <CardDescription>
-            Upload a PDF document extract the orders.
+          <CardDescription className="mt-1">
+            Upload a PDF document to extract the orders.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div
-            className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+            className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all ${
               isDragging
                 ? "border-indigo-500 bg-slate-50 dark:bg-slate-800/20"
-                : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
+                : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50/50 dark:hover:bg-slate-800/10"
             }`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -326,13 +326,13 @@ export function PdfUpload({
               className="hidden"
             />
 
-            <div className="flex flex-col items-center justify-center gap-3">
+            <div className="flex flex-col items-center justify-center gap-4">
               {selectedFile ? (
                 <>
-                  <FileText className="h-12 w-12 text-indigo-600 dark:text-indigo-400" />
+                  <FileText className="h-12 w-12 text-indigo-600 dark:text-indigo-400 animate-pulse" />
                   <div>
-                    <p className="text-sm font-medium">{selectedFile.name}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                    <p className="text-sm font-medium mt-2">{selectedFile.name}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
                     </p>
                   </div>
@@ -341,10 +341,10 @@ export function PdfUpload({
                 <>
                   <Upload className="h-12 w-12 text-indigo-600 dark:text-indigo-400" />
                   <div>
-                    <p className="font-medium">
+                    <p className="font-medium mt-2">
                       Drop your PDF here or click to browse
                     </p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                       Maximum file size: 10MB
                     </p>
                   </div>
@@ -355,7 +355,7 @@ export function PdfUpload({
 
           {error && (
             <div className="mt-4 p-3 bg-red-100 dark:bg-red-950/50 border border-red-300 dark:border-red-900 text-red-800 dark:text-red-300 rounded-md flex items-start animate-fade-in">
-              <AlertTriangle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
+              <AlertTriangle className="h-5 w-5 mr-3 flex-shrink-0 mt-0.5" />
               <div>{error}</div>
             </div>
           )}
@@ -377,7 +377,7 @@ export function PdfUpload({
                 <Button
                   type="button"
                   variant="outline"
-                  className="mr-2 border-slate-200 dark:border-slate-700"
+                  className="mr-3 border-slate-200 dark:border-slate-700"
                   onClick={resetState}
                   disabled={isUploading}
                 >

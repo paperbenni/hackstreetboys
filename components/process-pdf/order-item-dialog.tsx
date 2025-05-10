@@ -200,10 +200,16 @@ export function OrderItemDialog({
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit">Save Changes</Button>
+            <Button 
+              type="submit">
+              Save Changes
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
