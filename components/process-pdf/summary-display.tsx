@@ -3,14 +3,23 @@
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import DebugTab from "@/components/DebugTab";
+import { scrollableContainerStyle, ensureNoTruncation } from "@/lib/utils";
 
 interface SummaryDisplayProps {
   summary: string;
   isLoading: boolean;
   rawMarkdown?: string;
+  maxHeight?: string;
+  preventTruncation?: boolean;
 }
 
-export function SummaryDisplay({ summary, isLoading, rawMarkdown }: SummaryDisplayProps) {
+export function SummaryDisplay({ 
+  summary, 
+  isLoading, 
+  rawMarkdown, 
+  maxHeight = "70vh",
+  preventTruncation = true 
+}: SummaryDisplayProps) {
   const [activeTab, setActiveTab] = useState<'summary' | 'debug'>('summary');
   
   // Process the summary text to separate it into paragraphs
@@ -62,7 +71,13 @@ export function SummaryDisplay({ summary, isLoading, rawMarkdown }: SummaryDispl
           </div>
           <CardContent className="p-0 h-full">
             {activeTab === 'summary' ? (
-              <div className="p-3 sm:p-6 pb-4 sm:pb-8 h-[calc(100%-40px)] overflow-y-auto">
+              <div 
+                className="p-3 sm:p-6 pb-4 sm:pb-8 h-[calc(100%-40px)] scrollable" 
+                style={{
+                  ...scrollableContainerStyle(maxHeight),
+                  ...(preventTruncation ? ensureNoTruncation() : {})
+                }}
+              >
                 {isLoading ? (
                   <div className="flex flex-col items-center justify-center py-6 sm:py-12">
                     <div className="animate-pulse flex flex-col items-center space-y-3 sm:space-y-4 w-full">
@@ -77,7 +92,7 @@ export function SummaryDisplay({ summary, isLoading, rawMarkdown }: SummaryDispl
                       {summaryParagraphs.map((paragraph, index) => (
                         <p 
                           key={index} 
-                          className="my-2 sm:my-3 text-sm sm:text-base md:text-lg text-blue-800 dark:text-blue-300"
+                          className="my-2 sm:my-3 text-sm sm:text-base md:text-lg text-blue-800 dark:text-blue-300 no-truncate"
                         >
                           {paragraph}
                         </p>
@@ -88,7 +103,11 @@ export function SummaryDisplay({ summary, isLoading, rawMarkdown }: SummaryDispl
               </div>
             ) : (
               <div className="p-3 sm:p-6 h-[calc(100%-40px)]">
-                <DebugTab markdown={rawMarkdown || ''} />
+                <DebugTab 
+                  markdown={rawMarkdown || ''} 
+                  maxHeight={maxHeight}
+                  preventTruncation={preventTruncation} 
+                />
               </div>
             )}
           </CardContent>

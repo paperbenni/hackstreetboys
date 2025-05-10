@@ -1,12 +1,14 @@
 import ReactMarkdown from 'react-markdown';
-import { cn } from "@/lib/utils";
+import { cn, scrollableContainerStyle, ensureNoTruncation } from "@/lib/utils";
 
 interface MarkdownProps {
   content: string;
   className?: string;
+  maxHeight?: string;
+  preventTruncation?: boolean;
 }
 
-export function Markdown({ content, className }: MarkdownProps) {
+export function Markdown({ content, className, maxHeight = "70vh", preventTruncation = true }: MarkdownProps) {
   const markdownClassNames = cn(
     "prose dark:prose-invert max-w-none prose-headings:scroll-m-20 prose-headings:font-semibold",
     "prose-h1:text-xl prose-h1:font-bold prose-h2:text-lg prose-h2:font-semibold",
@@ -21,11 +23,18 @@ export function Markdown({ content, className }: MarkdownProps) {
     "prose-hr:border-border prose-blockquote:border-l-4 prose-blockquote:border-blue-300 dark:prose-blockquote:border-blue-700",
     "prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:text-blue-800/80 dark:prose-blockquote:text-blue-300/80",
     "prose-ul:list-disc prose-ol:list-decimal",
+    "break-words whitespace-normal scrollable", // Enhanced overflow handling
     className
   );
 
+  // Combine scrollable container style with no-truncation style if needed
+  const containerStyle = {
+    ...scrollableContainerStyle(maxHeight),
+    ...(preventTruncation ? ensureNoTruncation() : {})
+  };
+
   return (
-    <div className={markdownClassNames}>
+    <div className={markdownClassNames} style={containerStyle}>
       <ReactMarkdown>
         {content}
       </ReactMarkdown>

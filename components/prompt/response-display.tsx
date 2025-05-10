@@ -8,13 +8,17 @@ interface ResponseDisplayProps {
   modelId?: string;
   timestamp?: Date;
   isLoading?: boolean;
+  maxHeight?: string;
+  preventTruncation?: boolean;
 }
 
 export function ResponseDisplay({ 
   response, 
   modelId, 
   timestamp = new Date(),
-  isLoading = false 
+  isLoading = false,
+  maxHeight = "70vh",
+  preventTruncation = true
 }: ResponseDisplayProps) {
   if (!response && !isLoading) {
     return null;
@@ -23,7 +27,7 @@ export function ResponseDisplay({
   const modelName = modelId ? modelId.split('/').pop()?.replace(/-/g, ' ').replace(/:beta/, '') : 'AI';
   
   return (
-    <Card className="mt-6 border-blue-200 dark:border-blue-800 bg-white/80 dark:bg-blue-950/50 overflow-hidden">
+    <Card className="mt-6 border-blue-200 dark:border-blue-800 bg-white/80 dark:bg-blue-950/50 overflow-hidden scrollable">
       <CardHeader className="pb-2 bg-blue-50/70 dark:bg-blue-900/40">
         <div className="flex justify-between items-center">
           <CardTitle className="text-md text-blue-700 dark:text-blue-300 capitalize">
@@ -49,6 +53,8 @@ export function ResponseDisplay({
           <Markdown 
             content={response} 
             className="text-gray-700 dark:text-gray-300 prose-sm md:prose-base"
+            maxHeight={maxHeight}
+            preventTruncation={preventTruncation}
           />
         )}
       </CardContent>

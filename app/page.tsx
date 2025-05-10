@@ -80,7 +80,12 @@ export default function ProcessDocumentPage() {
                     </Button>
                   )}
                 </div>
-                <SummaryDisplay summary={summary} isLoading={isLoading} rawMarkdown={rawMarkdown} />
+                <SummaryDisplay 
+                  summary={summary} 
+                  isLoading={isLoading} 
+                  rawMarkdown={rawMarkdown}
+                  maxHeight="70vh" 
+                />
               </div>
             )}
           </div>

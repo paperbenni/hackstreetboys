@@ -1,8 +1,6 @@
 "use client";
 
-import { useState } from "react";
-
-import { PromptForm } from "@/components/prompt/prompt-form";
+import React, { useState } from "react";
 import {
   Card,
   CardContent,
@@ -12,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import { ResponseDisplay } from "@/components/prompt/response-display";
 import { ApiKeyWarning } from "@/components/api-key-warning";
+import { PromptForm } from "@/components/prompt/prompt-form";
 
 export default function Home() {
   const [response, setResponse] = useState<string>("");
@@ -56,6 +55,7 @@ export default function Home() {
               modelId={responseModel}
               timestamp={responseTimestamp || undefined}
               isLoading={isLoading}
+              maxHeight="70vh"
             />
           </CardContent>
         </Card>

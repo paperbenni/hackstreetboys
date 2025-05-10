@@ -120,3 +120,26 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  .scrollable {
+    @apply overflow-y-auto break-words whitespace-normal;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  .scrollable::-webkit-scrollbar {
+    width: 6px;
+  }
+  .scrollable::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollable::-webkit-scrollbar-thumb {
+    background-color: var(--border);
+    border-radius: 10px;
+  }
+  
+  .no-truncate {
+    @apply whitespace-normal break-words overflow-visible;
+    text-overflow: unset;
+  }
+}
