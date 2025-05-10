@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Loader2, Upload, FileText, AlertTriangle } from "lucide-react";
+import { processJsonStreamingResponse } from "@/lib/utils";
 
 interface PdfUploadProps {
   onPdfProcessedAction: (summary: string, rawMarkdown?: string) => void;
@@ -118,14 +119,51 @@ export function PdfUpload({
         );
       }
 
-      const data = await response.json();
-
-      if (data.summary) {
-        onPdfProcessedAction(data.summary, data.rawMarkdown);
-        // Don't reset the selected file after successful processing
-        setError(null);
+      // Check response content type to determine if we got a streaming response
+      const contentType = response.headers.get("Content-Type") || "";
+      
+      if (contentType.includes("x-ndjson") || contentType.includes("text/event-stream")) {
+        // Handle streaming response
+        let rawMarkdownText = "";
+        let accumulatedContent = "";
+        
+        await processJsonStreamingResponse(response, {
+          onInit: (data) => {
+            // Initialize with raw markdown
+            rawMarkdownText = data.rawMarkdown ? String(data.rawMarkdown) : "";
+            // Immediately update the UI with the raw markdown (empty summary at this point)
+            onPdfProcessedAction("", rawMarkdownText);
+          },
+          onDelta: (content) => {
+            // Ensure content is a string before adding to accumulated content
+            const contentStr = String(content);
+            accumulatedContent += contentStr;
+            // Update UI with each new piece of content
+            onPdfProcessedAction(accumulatedContent, rawMarkdownText);
+          },
+          onComplete: (summary) => {
+            // Final update with complete summary
+            onPdfProcessedAction(summary, rawMarkdownText);
+            setError(null);
+            // Only stop loading when complete
+            setIsUploading(false);
+          },
+          onError: (error) => {
+            throw new Error(error);
+          }
+        });
       } else {
-        throw new Error("No summary returned from server");
+        // Handle non-streaming response
+        const data = await response.json();
+        
+        if (data.summary) {
+          onPdfProcessedAction(String(data.summary || ""), String(data.rawMarkdown || ""));
+          setError(null);
+        } else {
+          throw new Error("No summary returned from server");
+        }
+        
+        setIsUploading(false);
       }
     } catch (err) {
       console.error("Error uploading PDF:", err);
@@ -150,9 +188,9 @@ export function PdfUpload({
         setError("An unknown error occurred");
       }
       onPdfProcessedAction("", ""); // Clear any previous response
-    } finally {
-      setIsUploading(false);
+      setIsUploading(false); // Make sure to set loading state to false on error
     }
+    // Removed finally block to manage loading state within the request callbacks
   };
 
   return (

@@ -94,15 +94,20 @@ export function EnhancedMarkdown({
   // If content is JSON, ensure it's not truncated
   let processedContent = content;
   
-  // Try to detect if content is JSON and handle it specially to avoid truncation
-  if (content.trim().startsWith('{') && content.trim().endsWith('}')) {
-    try {
-      // For JSON, ensure proper formatting and no truncation
-      const jsonObj = JSON.parse(content);
-      processedContent = JSON.stringify(jsonObj, null, 2);
-    } catch (e) {
-      // If it's not valid JSON or too large, use the original content
-      console.warn('Failed to parse content as JSON:', e);
+  // Limit content length if needed
+  if (content.length > maxContentSize) {
+    processedContent = content.substring(0, maxContentSize) + '... (content truncated due to size)';
+  } else {
+    // Try to detect if content is JSON and handle it specially to avoid truncation
+    if (content.trim().startsWith('{') && content.trim().endsWith('}')) {
+      try {
+        // For JSON, ensure proper formatting and no truncation
+        const jsonObj = JSON.parse(content);
+        processedContent = JSON.stringify(jsonObj, null, 2);
+      } catch (e) {
+        // If it's not valid JSON or too large, use the original content
+        console.warn('Failed to parse content as JSON:', e);
+      }
     }
   }
 

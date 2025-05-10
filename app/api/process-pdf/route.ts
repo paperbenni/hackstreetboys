@@ -239,7 +239,7 @@ export async function POST(request: NextRequest) {
       ${fullMarkdown}
     `;
 
-    // Set request options with a longer timeout and larger response limit
+    // Set request options with streaming enabled
     const requestOptions = {
       method: "POST",
       headers: getApiHeaders(apiKey),
@@ -247,11 +247,20 @@ export async function POST(request: NextRequest) {
         model: "anthropic/claude-3-haiku:beta", // Using a smaller model for efficiency
         messages: [{ role: "user", content: prompt }],
         max_tokens: 100000, // Ensure we have enough tokens for complete responses
-        stream: false, // Don't stream the response to avoid truncation
+        stream: true, // Enable streaming for large responses
       }),
     };
+
+    // Override streaming if disabled in environment variables
+    const disableStreaming = process.env.DISABLE_STREAMING === 'true';
+    if (disableStreaming) {
+      requestOptions.body = JSON.stringify({
+        ...JSON.parse(requestOptions.body as string),
+        stream: false
+      });
+    }
     
-    // Send request to OpenRouter API with increased timeout
+    // Send request to OpenRouter API
     const response = await fetch(OPENROUTER_API_URL, requestOptions);
 
     if (!response.ok) {
@@ -266,36 +275,125 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Process the response carefully to avoid truncation
-    const responseText = await response.text();
-    let data;
-    try {
-      data = JSON.parse(responseText);
-    } catch (e) {
-      console.error("Error parsing JSON response:", e);
-      return NextResponse.json({
-        error: "Failed to parse LLM response",
-        details: e instanceof Error ? e.message : String(e)
-      }, { status: 500 });
+    // If streaming is disabled, handle response normally
+    if (disableStreaming) {
+      const responseText = await response.text();
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (e) {
+        console.error("Error parsing JSON response:", e);
+        return new Response(
+          JSON.stringify({
+            error: "Failed to parse LLM response",
+            details: e instanceof Error ? e.message : String(e)
+          }),
+          { status: 500, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      const summaryContent =
+        data.choices?.[0]?.message?.content ||
+        "Could not generate summary from the provided PDF.";
+        
+      return new Response(
+        JSON.stringify({ 
+          summary: summaryContent,
+          rawMarkdown: fullMarkdown // Return the full markdown content
+        }),
+        { 
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        }
+      );
     }
-    
-    const summaryContent =
-      data.choices?.[0]?.message?.content ||
-      "Could not generate summary from the provided PDF.";
 
-    // Configure the NextResponse with increased size limit
-    return new NextResponse(
-      JSON.stringify({ 
-        summary: summaryContent,
-        rawMarkdown: fullMarkdown // Return the full markdown content
-      }),
-      { 
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
+    // Create a streaming response
+    const encoder = new TextEncoder();
+    const customReadable = new ReadableStream({
+      async start(controller) {
+        try {
+          // Send the initial data with the raw markdown
+          controller.enqueue(encoder.encode(JSON.stringify({ 
+            type: 'init',
+            rawMarkdown: fullMarkdown
+          }) + '\n'));
+          
+          // Process the streaming response
+          const reader = response.body?.getReader();
+          if (!reader) throw new Error("Response body is null");
+
+          let summaryContent = "";
+          
+          // Read chunks from the stream
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            
+            // Convert the chunk to text
+            const chunk = new TextDecoder().decode(value);
+            
+            try {
+              // OpenRouter sends each chunk as a JSON object with a 'data: ' prefix
+              const lines = chunk.split("\n").filter(line => line.trim());
+              
+              for (const line of lines) {
+                // Skip empty lines and '[DONE]' messages
+                if (!line || line === 'data: [DONE]') continue;
+
+                // Remove 'data: ' prefix if it exists
+                const data = line.startsWith('data: ') ? JSON.parse(line.slice(6)) : JSON.parse(line);
+
+                if (data.choices && data.choices[0]) {
+                  // Extract the content delta
+                  const contentDelta = data.choices[0]?.delta?.content || data.choices[0]?.message?.content || '';
+                  
+                  if (contentDelta) {
+                    // Append to the accumulated summary content
+                    summaryContent += contentDelta;
+                    
+                    // Send delta to the client
+                    controller.enqueue(encoder.encode(JSON.stringify({ 
+                      type: 'delta',
+                      content: contentDelta 
+                    }) + '\n'));
+                  }
+                }
+              }
+            } catch (err) {
+              console.error('Error parsing chunk:', chunk, err);
+              // Continue processing other chunks even if one fails
+            }
+          }
+          
+          // Send complete message when done
+          controller.enqueue(encoder.encode(JSON.stringify({ 
+            type: 'complete',
+            summary: summaryContent || "Could not generate summary from the provided PDF."
+          }) + '\n'));
+          
+        } catch (error) {
+          console.error('Streaming error:', error);
+          controller.enqueue(encoder.encode(JSON.stringify({ 
+            type: 'error',
+            error: error instanceof Error ? error.message : String(error)
+          }) + '\n'));
+        } finally {
+          controller.close();
         }
       }
-    );
+    });
+
+    // Return a streaming response
+    return new Response(customReadable, {
+      headers: {
+        'Content-Type': 'application/x-ndjson',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      }
+    });
   } catch (error) {
     console.error("Error processing PDF to process request:", error);
 

@@ -37,6 +37,16 @@ This application requires an OpenRouter API key to function:
    OPENAPI_KEY=your_openrouter_api_key_here
    ```
 
+### Streaming Responses
+
+This application uses streaming for OpenAI/OpenRouter API responses, offering several benefits:
+
+1. **Reduced Wait Times**: Content appears progressively as it's generated
+2. **Handling Large Output**: Prevents truncation issues with large PDF outputs
+3. **Better User Experience**: Provides real-time feedback during processing
+
+For technical details on how streaming is implemented, see [STREAMING.md](STREAMING.md).
+
 ## Docker Deployment
 
 The application can also be run using Docker, which simplifies setup by packaging all dependencies including Node.js and the required Python tools:
@@ -101,3 +111,10 @@ To deploy in production using Docker:
    ```
 
 This will run the application in a container with all required dependencies, including the markitdown CLI tool.
+
+## Feature Highlights
+
+- **PDF Processing**: Extract structured data from PDF documents
+- **Multiple AI Models**: Supports various OpenRouter models including Claude, GPT, Gemini, and Llama
+- **Streaming Responses**: Real-time streaming output for large document processing
+- **Debug Mode**: Raw markdown view for debugging extracted content

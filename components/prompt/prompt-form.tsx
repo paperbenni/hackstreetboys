@@ -10,6 +10,7 @@ import { Loader2, RefreshCw } from "lucide-react";
 import { OPENROUTER_MODELS, DEFAULT_MODEL } from "@/lib/api/openrouter";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
+import { processStreamingResponse } from "@/lib/utils";
 
 const formSchema = z.object({
   prompt: z.string().min(1, {
@@ -54,6 +55,7 @@ export function PromptForm({ onResponseAction, onSubmitAction }: PromptFormProps
           messages: [
             { role: "user", content: values.prompt }
           ],
+          stream: true, // Enable streaming
         }),
       });
 
@@ -63,10 +65,30 @@ export function PromptForm({ onResponseAction, onSubmitAction }: PromptFormProps
         throw new Error(errorMessage);
       }
 
-      const data = await response.json();
-      const messageContent = data.choices?.[0]?.message?.content || "No response received";
+      // Clear previous response before starting
+      onResponseAction("");
       
-      onResponseAction(messageContent);
+      // Use the utility function to process streaming response
+      try {
+        await processStreamingResponse(
+          response,
+          // On each delta update, send it to the UI
+          (contentDelta) => {
+            onResponseAction(contentDelta);
+          },
+          // When complete, make sure we have the full content
+          (fullContent) => {
+            if (fullContent) {
+              onResponseAction(fullContent);
+            } else {
+              onResponseAction("No response received");
+            }
+          }
+        );
+      } catch (err) {
+        console.error('Error processing stream:', err);
+        onResponseAction("Error processing response");
+      }
       
       // Reset only the prompt field, keeping the model selection
       form.setValue("prompt", "");

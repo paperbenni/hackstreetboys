@@ -21,7 +21,9 @@ export default function ProcessDocumentPage() {
   const handlePdfProcessed = (summaryText: string, markdownText: string = "") => {
     setSummary(summaryText);
     setRawMarkdown(markdownText);
-    setIsLoading(false);
+    // Keep loading state true while streaming is happening
+    // The loading state will be set to false only when processing is complete
+    // in the PdfUpload component's onComplete handler
   };
 
   const handleFileSelected = (file: File | null) => {
@@ -84,7 +86,8 @@ export default function ProcessDocumentPage() {
                   summary={summary} 
                   isLoading={isLoading} 
                   rawMarkdown={rawMarkdown}
-                  maxHeight="70vh" 
+                  maxHeight="70vh"
+                  streaming={isLoading && summary.length > 0}
                 />
               </div>
             )}
