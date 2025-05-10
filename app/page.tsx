@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { PdfUpload } from "@/components/process-pdf/pdf-upload";
 import { PdfViewer } from "@/components/process-pdf/pdf-viewer";
-import { SummaryDisplay } from "@/components/process-pdf/summary-display";
+import { PDFDataList } from "@/components/process-pdf/pdf-data-list";
 import { ApiKeyWarning } from "@/components/api-key-warning";
 import { Button } from "@/components/ui/button";
 import { RefreshCcw } from "lucide-react";
@@ -89,12 +89,11 @@ export default function ProcessDocumentPage() {
                     </Button>
                   )}
                 </div>
-                <SummaryDisplay 
-                  summary={summary} 
+                <PDFDataList 
+                  data={summary} 
                   isLoading={isLoading} 
                   rawMarkdown={rawMarkdown}
                   maxHeight="70vh"
-                  streaming={isLoading && summary.length > 0}
                 />
               </div>
             )}
