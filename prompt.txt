@@ -2,7 +2,7 @@ Below there is a specification of a data format in markdown. After the marker
 #SPECEND there will be a list of orders. extract the relevant orders to the
 specified format. Ignore anything not related to the orders. 
 
-# Hackathon Challenge Guidelines
+# Guidelines
 
 ## Overview
 
@@ -150,7 +150,7 @@ Provide a separate overview of any additional allowances required in the specifi
 
 #SPECEND
 
-Read below the "# Hackathon Challenge Guidelines" above the #SPECEND and annotate and parse the PDF that identifies the key items listed in the @Hackathon Challenge Guidelines.md and collects them together in a JSON file. The JSON schema should be formatted by taking the output.xml code snippet reference. The "text" sections may be longer at initial commissions (such as 1.1.10), but do this without copying the example output.xml in the "# Hackathon Challenge Guidelines", such that the "text" section should be copy and pasted directly from the PDF unlike the summarized version as in output.xml. Also, remove the colons at the end of parsed text, before the break command. Leave the initial customerId blank as it will be entered manually. 
+Read below the "# Guidelines" above the #SPECEND and annotate and parse the PDF that identifies the key items listed in the "# Guidelines" and collects them together in a JSON file. The JSON schema should be formatted by taking the output.xml code snippet reference. The "text" sections may be longer at initial commissions (such as 1.1.10), but do this without copying the example output.xml in the "# Guidelines", such that the "text" section should be copy and pasted directly from the PDF unlike the summarized version as in output.xml. Also, remove the colons at the end of parsed text, before the break command. Leave the initial customerId blank as it will be entered manually. 
 
-Now read the "# Hackathon Challenge Guidelines" and especially the "##Additional Guidelines" section, where it asks for the output of a list of required Artikel. For this purpose, provide a summary of items based on the sku: accumulate the quantity numbers for each element, with a simple explanation of Element in German language. The element should be one word long, like "50 Holzelemente" or "10 Stahltüren", if the element has two or more items, identify the exact item and summarize its quantity with respect to the Artikel name. Also take extra care with the Extra guideline under "# Hackathon Challenge Guidelines" ## Elements, where the Türblatt is decisive over Zarge, and for Verglasungen, Zarge is decisive over Festverglasungen.
+Now read the "# Guidelines" and especially the "##Additional Guidelines" section, where it asks for the output of a list of required Artikel. For this purpose, provide a summary of items based on the sku: accumulate the quantity numbers for each element, with a simple explanation of Element in German language. The element should be one word long, like "50 Holzelemente" or "10 Stahltüren", if the element has two or more items, identify the exact item and summarize its quantity with respect to the Artikel name. Also take extra care with the Extra guideline under "# Guidelines" ## Elements, where the Türblatt is decisive over Zarge, and for Verglasungen, Zarge is decisive over Festverglasungen.
 
