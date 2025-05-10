@@ -8,10 +8,10 @@ import { Loader2, Upload, FileText, AlertTriangle } from "lucide-react";
 interface PdfUploadProps {
   onPdfProcessedAction: (summary: string) => void;
   onProcessingStartAction: () => void;
-  onFileSelected: (file: File | null) => void;
+  onFileSelectedAction: (file: File | null) => void;
 }
 
-export function PdfUpload({ onPdfProcessedAction, onProcessingStartAction, onFileSelected }: PdfUploadProps) {
+export function PdfUpload({ onPdfProcessedAction, onProcessingStartAction, onFileSelectedAction }: PdfUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -21,7 +21,7 @@ export function PdfUpload({ onPdfProcessedAction, onProcessingStartAction, onFil
   const resetState = () => {
     setSelectedFile(null);
     setError(null);
-    onFileSelected(null);
+    onFileSelectedAction(null);
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -59,7 +59,7 @@ export function PdfUpload({ onPdfProcessedAction, onProcessingStartAction, onFil
     
     if (validateFile(file)) {
       setSelectedFile(file);
-      onFileSelected(file);
+      onFileSelectedAction(file);
     }
   };
 
@@ -107,7 +107,8 @@ export function PdfUpload({ onPdfProcessedAction, onProcessingStartAction, onFil
       
       if (data.summary) {
         onPdfProcessedAction(data.summary);
-        resetState();
+        // Don't reset the selected file after successful processing
+        setError(null);
       } else {
         throw new Error("No summary returned from server");
       }

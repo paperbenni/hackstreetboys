@@ -30,9 +30,9 @@ export function PdfViewer({ file, url }: PdfViewerProps) {
   }
 
   return (
-    <div className="w-full">
-      <Card className="w-full border-blue-200 dark:border-blue-800 bg-white/70 dark:bg-blue-950/30">
-        <CardContent className="p-6">
+    <div className="w-full h-full">
+      <Card className="w-full h-full border-blue-200 dark:border-blue-800 bg-white/70 dark:bg-blue-950/30">
+        <CardContent className="p-4 h-full">
           <PDFViewerInner file={file} url={url} />
         </CardContent>
       </Card>
