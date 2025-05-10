@@ -1,5 +1,4 @@
 "use client";
-import { parse } from "best-effort-json-parser";
 
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -76,7 +75,7 @@ export function PDFDataList({
     try {
       // Try to extract JSON from the input data
       const jsonString = extractJsonFromMarkdown(data);
-      const parsed = parse(jsonString);
+      const parsed = JSON.parse(jsonString);
 
       if (Array.isArray(parsed)) {
         setParsedData(parsed);
