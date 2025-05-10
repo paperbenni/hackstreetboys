@@ -11,11 +11,11 @@ import {
 import { ResponseDisplay } from "@/components/prompt/response-display";
 import { ApiKeyWarning } from "@/components/api-key-warning";
 import { PromptForm } from "@/components/prompt/prompt-form";
-import { extractJsonFromMarkdown } from "@/lib/utils";
+
 
 export default function Home() {
   const [response, setResponse] = useState<string>("");
-  const [jsonData, setJsonData] = useState<string>("");
+
   const [responseModel, setResponseModel] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [responseTimestamp, setResponseTimestamp] = useState<Date | null>(null);
@@ -30,14 +30,7 @@ export default function Home() {
     setIsLoading(false);
     setResponseTimestamp(new Date());
     
-    // Try to extract JSON from the response
-    try {
-      const extractedJson = extractJsonFromMarkdown(text);
-      setJsonData(extractedJson);
-    } catch (error) {
-      console.error("Failed to extract JSON:", error);
-      setJsonData("{}");
-    }
+    // No JSON extraction needed anymore
   };
 
   return (
@@ -67,8 +60,6 @@ export default function Home() {
               timestamp={responseTimestamp || undefined}
               isLoading={isLoading}
               maxHeight="70vh"
-              showJsonTree={true}
-              rawJsonData={jsonData}
             />
           </CardContent>
         </Card>

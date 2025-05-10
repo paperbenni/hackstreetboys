@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import SimpleJsonValidator from '@/components/SimpleJsonValidator';
 
 export default function SimpleJsonDemo() {
   const [jsonInput, setJsonInput] = useState('');
@@ -9,257 +8,197 @@ export default function SimpleJsonDemo() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamInterval, setStreamInterval] = useState<NodeJS.Timeout | null>(null);
 
-  // Handle text area input
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setJsonInput(e.target.value);
-  };
-
-  // Create nested but completable JSON example
-  const createNestedIncompleteJson = () => {
-    // This JSON is intentionally incomplete (missing closing brackets)
-    const incompleteJson = `{
-      "name": "Complex Incomplete Example",
-      "metadata": {
-        "version": "1.0.0",
-        "created": "${new Date().toISOString()}"
-      },
-      "items": [
-        {
-          "id": 1,
-          "properties": {
-            "color": "blue",
-            "size": "large",
-            "features": ["waterproof", "durable", "lightweight"
-          }
-        },
-        {
-          "id": 2,
-          "properties": {
-            "color": "red",
-            "size": "medium",
-            "features": ["foldable", "compact"
-          }
-        }
-      ],
-      "settings": {
-        "enabled": true,
-        "config": {
-          "timeout": 30,
-          "retries": 3,
-          "advanced": {
-            "logging": true,
-            "caching": {
-              "enabled": true,
-              "duration": 3600
-            
-          }
-        }
-      }
-    }`;
+  /**
+   * This demo is designed to show a simple JSON validation example
+   * But the JSON tree visualization has been removed as requested
+   */
+  
+  // Function to validate JSON
+  const isValidJson = (str: string): boolean => {
+    if (!str || str.trim() === '') return false;
     
-    setJsonInput(incompleteJson);
+    try {
+      JSON.parse(str);
+      return true;
+    } catch {
+      return false;
+    }
   };
 
-  // Start JSON streaming
-  const startJsonStream = () => {
-    if (streamInterval) {
-      clearInterval(streamInterval);
-    }
-
-    const exampleJson = JSON.stringify({
-      name: "Simple JSON Validator",
-      description: "A lightweight JSON validator that uses a simple approach",
-      features: ["Efficient", "Easy to understand", "Lightweight"],
-      version: "1.0.0",
-      created: new Date().toISOString()
-    }, null, 2);
-
-    let index = 0;
-    setStreamedOutput('');
+  // Start streaming example JSON
+  const startStreaming = () => {
+    if (isStreaming) return;
+    
     setIsStreaming(true);
-
+    setStreamedOutput('');
+    
+    // Example JSON to stream character by character
+    const sampleJSON = `{
+  "name": "JSON Validator Example",
+  "version": 1.0,
+  "features": [
+    "Basic Validation",
+    "Real-time Updates",
+    "Error Reporting"
+  ],
+  "settings": {
+    "autoSave": true,
+    "theme": "dark",
+    "notifications": {
+      "email": false,
+      "push": true
+    }
+  },
+  "lastUpdated": "2023-09-15T14:30:00Z"
+}`;
+    
+    let currentIndex = 0;
+    
     const interval = setInterval(() => {
-      if (index <= exampleJson.length) {
-        setStreamedOutput(exampleJson.substring(0, index));
-        index++;
+      if (currentIndex < sampleJSON.length) {
+        setStreamedOutput(prev => prev + sampleJSON[currentIndex]);
+        currentIndex++;
       } else {
         clearInterval(interval);
         setStreamInterval(null);
         setIsStreaming(false);
       }
-    }, 50);
-
+    }, 50); // Stream a character every 50ms
+    
     setStreamInterval(interval);
   };
-
-  // Create incomplete JSON (missing closing brackets)
-  const createCorruptedJson = () => {
-    const validJson = JSON.stringify({
-      test: "Incomplete JSON example",
-      data: [1, 2, 3],
-      nested: {
-        level1: {
-          level2: {
-            array: [
-              { id: 1, name: "Item 1" },
-              { id: 2, name: "Item 2" }
-            ]
-          }
-        }
-      }
-    }, null, 2);
-    
-    // Remove closing brackets to make it incomplete but potentially valid
-    setStreamedOutput(validJson.substring(0, validJson.length - 5));
-  };
-
-  // Clean up on unmount
-  const clearOutput = () => {
+  
+  // Stop the streaming demonstration
+  const stopStreaming = () => {
     if (streamInterval) {
       clearInterval(streamInterval);
       setStreamInterval(null);
+      setIsStreaming(false);
     }
+  };
+  
+  // Reset all state
+  const resetDemo = () => {
+    stopStreaming();
+    setJsonInput('');
     setStreamedOutput('');
-    setIsStreaming(false);
   };
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-6xl">
-      <h1 className="text-3xl font-bold mb-6">Simple JSON Validator</h1>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-          <h2 className="text-xl font-semibold mb-4">Streaming JSON Example</h2>
-          <div className="flex gap-2 mb-4">
-            <button 
-              onClick={startJsonStream}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-              disabled={isStreaming}
-            >
-              {isStreaming ? 'Streaming...' : 'Stream Valid JSON'}
-            </button>
-            <button 
-              onClick={createCorruptedJson}
-              className="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700"
-            >
-              Create Missing Brackets
-            </button>
-            <button 
-              onClick={clearOutput}
-              className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
-            >
-              Clear
-            </button>
+    <div className="min-h-screen p-4 md:p-8 bg-gray-50 dark:bg-gray-900">
+      <div className="max-w-5xl mx-auto">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">
+          JSON Validation Demo
+        </h1>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">
+              Input JSON
+            </h2>
+            
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+              <div className="mb-4">
+                <textarea 
+                  className="w-full h-64 p-3 text-sm font-mono border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                  placeholder="Enter JSON here..."
+                  value={isStreaming ? streamedOutput : jsonInput}
+                  onChange={(e) => setJsonInput(e.target.value)}
+                  disabled={isStreaming}
+                />
+              </div>
+              
+              <div className="flex flex-wrap gap-2">
+                {!isStreaming ? (
+                  <>
+                    <button
+                      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium"
+                      onClick={startStreaming}
+                    >
+                      Demo Streaming
+                    </button>
+                    <button
+                      className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-gray-600 text-sm font-medium"
+                      onClick={resetDemo}
+                    >
+                      Clear
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm font-medium"
+                    onClick={stopStreaming}
+                  >
+                    Stop Streaming
+                  </button>
+                )}
+              </div>
+            </div>
+            
+            <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-md border border-amber-200 dark:border-amber-800 text-sm">
+              <p>
+                <strong className="font-medium">Tip:</strong> The JSON tree viewer has been removed. 
+                You can still input valid JSON here but it will only be validated, not displayed as a tree.
+              </p>
+            </div>
           </div>
-          <pre className="bg-gray-100 dark:bg-gray-900 p-4 rounded-md overflow-auto h-64 font-mono text-sm">
-            {streamedOutput}
-          </pre>
+          
+          <div>
+            <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">
+              JSON Validation Result
+            </h2>
+            
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700 min-h-[440px]">
+              <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md border border-blue-200 dark:border-blue-700">
+                <p className="text-sm">
+                  <strong>Validation status:</strong> This validator checks if the input is valid JSON.
+                </p>
+              </div>
+              
+              <div className="flex items-center mb-4">
+                <div 
+                  className={`w-3 h-3 rounded-full mr-2 ${isValidJson(streamedOutput || jsonInput) ? 'bg-green-500' : 'bg-red-500'}`}
+                />
+                <span>
+                  {isValidJson(streamedOutput || jsonInput)
+                    ? 'Valid JSON detected'
+                    : 'Invalid JSON or waiting for input...'}
+                </span>
+              </div>
+              
+              {!isValidJson(streamedOutput || jsonInput) && (streamedOutput || jsonInput) && (
+                <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded-md border border-red-200 dark:border-red-700">
+                  <h3 className="text-sm font-medium mb-2">Error:</h3>
+                  <p className="text-sm text-red-600 dark:text-red-400">
+                    Unable to parse JSON. Please check for syntax errors.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
         
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-          <h2 className="text-xl font-semibold mb-4">Test Incomplete JSON</h2>
-          <div className="mb-4">
-            <textarea 
-              className="w-full h-64 p-4 rounded-md bg-gray-100 dark:bg-gray-900 font-mono text-sm"
-              value={jsonInput}
-              onChange={handleInputChange}
-              placeholder="Enter JSON here..."
-            />
-          </div>
-          <div className="flex justify-end space-x-2">
-            <button 
-              onClick={createNestedIncompleteJson}
-              className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
-            >
-              Try Incomplete JSON
-            </button>
-            <button 
-              onClick={() => setJsonInput('')}
-              className="px-3 py-1 bg-gray-600 text-white rounded hover:bg-gray-700"
-            >
-              Clear
-            </button>
-          </div>
-        </div>
-      </div>
-      
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-4">Enhanced JSON Validator Output</h2>
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-          <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md border border-blue-200 dark:border-blue-700">
-            <p className="text-sm">
-              <strong>Auto-completion feature:</strong> This validator recognizes JSON that&apos;s incomplete but well-structured, 
-              completing it by adding missing closing parentheses, brackets, or braces.
-            </p>
-          </div>
-          <SimpleJsonValidator 
-            input={streamedOutput || jsonInput} 
-            pollingInterval={300}
-          />
-        </div>
-      </div>
-      
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-        <h2 className="text-xl font-semibold mb-4">About This Enhanced Validation Approach</h2>
-        <div className="prose dark:prose-invert max-w-none">
-          <p>This JSON validator uses an enhanced approach to check if a string is valid JSON or could be completed to form valid JSON:</p>
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700 mt-8">
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">
+            About This Demo
+          </h2>
           
-          <pre className="bg-gray-100 dark:bg-gray-900 p-4 rounded-md overflow-auto">
-{`function isJsonString(str) {
+          <p className="text-gray-700 dark:text-gray-300 mb-4">
+            This is a simplified JSON validator that checks if your input is valid JSON. It previously included
+            a tree visualization component, but this has been removed as requested.
+          </p>
+          
+          <div className="bg-gray-100 dark:bg-gray-900 p-4 rounded-md font-mono text-sm mb-4 overflow-auto">
+{`// Example of basic JSON validation
+function isValidJson(str) {
   try {
     JSON.parse(str);
     return true;
-  } catch {
-    // Try to make the JSON valid by completing it
-    const [canComplete, completed] = isCompletableJson(str);
-    if (canComplete && completed) {
-      // Store the completed version for display
-      setCompletedJson(completed);
-    }
-    return canComplete;
+  } catch (error) {
+    return false;
   }
-}
-
-// Checks if incomplete JSON can be made valid by adding missing closing brackets
-function isCompletableJson(str) {
-  // Track opening brackets, braces, and quotes
-  const stack = [];
-  let inString = false;
-  
-  // Process each character to track structure
-  for (let i = 0; i < str.length; i++) {
-    // Track strings, opening/closing brackets, etc.
-  }
-  
-  if (stack.length > 0) {
-    // Can be completed by adding missing closing brackets
-    const completion = stack.reverse().join('');
-    const completed = str + completion;
-    return [true, completed];
-  }
-  
-  return [false, null];
 }`}
-          </pre>
-          
-          <p>Key benefits of this approach:</p>
-          <ul>
-            <li>Simplicity: Clear, concise, and easy to understand</li>
-            <li>Efficiency: Uses the browser&apos;s native JSON parser</li>
-            <li>Reusability: Can be used anywhere in your code</li>
-            <li>Forgiving: Handles incomplete but well-structured JSON</li>
-            <li>Streaming-friendly: Works with JSON that&apos;s still being received</li>
-            <li>Lightweight: No complex dependencies</li>
-            <li>Visual: Shows the completed JSON with added closing brackets</li>
-          </ul>
-          
-          <p>Implementation:</p>
-          <pre className="bg-gray-100 dark:bg-gray-900 p-4 rounded-md overflow-auto">
-{`// Example usage in a component
-import SimpleJsonValidator from '@/components/SimpleJsonValidator';
-
-<SimpleJsonValidator input={jsonString} pollingInterval={500} />`}
-          </pre>
+          </div>
         </div>
       </div>
     </div>

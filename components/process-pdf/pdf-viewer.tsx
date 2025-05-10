@@ -6,8 +6,8 @@ import { Loader2 } from "lucide-react";
 import dynamic from 'next/dynamic';
 
 // Dynamically import the PDF viewer component to avoid SSR issues
-const PDFViewerInner = dynamic(
-  () => import('./pdf-viewer-inner'),
+const PDFViewer = dynamic(
+  () => import('../../components/PDFViewer'),
   { 
     ssr: false,
     loading: () => (
@@ -33,7 +33,11 @@ export function PdfViewer({ file, url }: PdfViewerProps) {
     <div className="w-full h-full">
       <Card className="w-full h-full border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-900/30">
         <CardContent className="p-4 h-full">
-          <PDFViewerInner file={file} url={url} />
+          <PDFViewer
+            pdfUrl={file || url || ''}
+            showControls={true}
+            className="w-full h-full"
+          />
         </CardContent>
       </Card>
     </div>
