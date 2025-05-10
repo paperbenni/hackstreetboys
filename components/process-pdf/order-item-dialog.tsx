@@ -11,15 +11,15 @@ import { Order } from "./types";
 
 interface OrderItemDialogProps {
   isOpen: boolean;
-  onClose: () => void;
-  onSave: (updatedItem: Order) => void;
+  onCloseAction: () => void;
+  onSaveAction: (updatedItem: Order) => void;
   item: Order;
 }
 
 export function OrderItemDialog({
   isOpen,
-  onClose,
-  onSave,
+  onCloseAction,
+  onSaveAction,
   item,
 }: OrderItemDialogProps) {
   // Create state for each field
@@ -38,7 +38,7 @@ export function OrderItemDialog({
   // Using the 'on' prefix to indicate these are event handlers
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave({
+    onSaveAction({
       sku,
       name,
       text,
@@ -54,7 +54,7 @@ export function OrderItemDialog({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={onCloseAction}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Edit Order Item</DialogTitle>
@@ -203,7 +203,7 @@ export function OrderItemDialog({
             <Button 
               type="button" 
               variant="outline" 
-              onClick={onClose}>
+              onClick={onCloseAction}>
               Cancel
             </Button>
             <Button 

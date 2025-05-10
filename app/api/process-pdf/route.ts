@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  OPENROUTER_API_URL,
-  getApiHeaders,
-  DEFAULT_MODEL,
-} from "@/lib/api/openrouter";
+
+import { getLlmService } from "@/lib/api/llm-service";
+import { DEFAULT_MODEL } from "@/lib/api/openrouter";
 import { extractTextFromPdf } from "@/lib/pdf/pdf-parser";
 
 // Set a maximum file size for uploads (10MB)
@@ -20,9 +18,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get API key from environment variable
-    const apiKey = process.env.OPENAPI_KEY;
-    if (!apiKey) {
+    // Get LLM service
+    let llmService;
+    try {
+      llmService = getLlmService();
+    } catch (ignoredError) {
+      console.error("LLM Service initialization failed:", ignoredError);
       return NextResponse.json(
         { error: "API key not configured on server" },
         { status: 401 },
@@ -245,66 +246,47 @@ export async function POST(request: NextRequest) {
       ${fullMarkdown}
     `;
 
-    // Set request options
-    const requestOptions = {
-      method: "POST",
-      headers: getApiHeaders(apiKey),
-      body: JSON.stringify({
-        model: DEFAULT_MODEL, // Use default model from configuration
-        messages: [{ role: "user", content: prompt }],
-        max_tokens: 100000, // Ensure we have enough tokens for complete responses
-        stream: true, // Enable streaming for large responses
-      }),
-    };
+    // Prepare the messages
+    const messages = [{ role: "user" as const, content: prompt }];
 
     // Override streaming if disabled in environment variables
     const disableStreaming = process.env.DISABLE_STREAMING === "true";
-    if (disableStreaming) {
-      requestOptions.body = JSON.stringify({
-        ...JSON.parse(requestOptions.body as string),
-        stream: false,
-      });
-    }
-
-    // Send request to OpenRouter API
-    const response = await fetch(OPENROUTER_API_URL, requestOptions);
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      return NextResponse.json(
-        {
-          error:
-            errorData?.error?.message ||
-            `API request failed with status ${response.status}`,
-        },
-        { status: response.status },
-      );
-    }
-
-    // If streaming is disabled, handle response normally
-    if (disableStreaming) {
-      const responseData = await response.json();
-      const summaryContent =
-        responseData.choices?.[0]?.message?.content ||
-        "Could not generate summary from the provided PDF.";
-
-      return new Response(
-        JSON.stringify({
-          summary: summaryContent,
-          rawMarkdown: fullMarkdown, // Return the full markdown content
-        }),
-        {
-          status: 200,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        },
-      );
-    }
-
-    // Create a streaming response
+    
+    // Create encoder for output
     const encoder = new TextEncoder();
 
+    if (disableStreaming) {
+      // Handle non-streaming case
+      try {
+        const response = await llmService.process({
+          model: DEFAULT_MODEL,
+          messages,
+          stream: false,
+        });
+        
+        return new Response(
+          JSON.stringify({
+            summary: response.content,
+            rawMarkdown: fullMarkdown, // Return the full markdown content
+          }),
+          {
+            status: 200,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        );
+      } catch (error) {
+        return NextResponse.json(
+          {
+            error: error instanceof Error ? error.message : String(error),
+          },
+          { status: 500 },
+        );
+      }
+    }
+    
+    // Handle streaming case
     const customReadable = new ReadableStream({
       async start(controller) {
         try {
@@ -317,84 +299,53 @@ export async function POST(request: NextRequest) {
               }) + "\n",
             ),
           );
-
-          // Process the streaming response
-          const reader = response.body?.getReader();
-          if (!reader) throw new Error("Response body is null");
-
-          let summaryContent = "";
-          let buffer = "";
-          const decoder = new TextDecoder();
-
-          try {
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
-
-              // Append new chunk to buffer with streaming mode
-              buffer += decoder.decode(value, { stream: true });
-
-              // Process complete lines from buffer
-              while (true) {
-                const lineEnd = buffer.indexOf("\n");
-                if (lineEnd === -1) break;
-
-                const line = buffer.slice(0, lineEnd).trim();
-                buffer = buffer.slice(lineEnd + 1);
-
-                if (!line || line === "data: [DONE]") continue;
-
-                if (line.startsWith("data: ")) {
-                  const data = line.slice(6);
-
-                  // Skip OpenRouter processing messages
-                  if (data.includes("OPENROUTER PROCESSING")) continue;
-
-                  try {
-                    const parsed = JSON.parse(data);
-                    const contentDelta =
-                      parsed.choices[0]?.delta?.content ||
-                      parsed.choices[0]?.message?.content ||
-                      "";
-
-                    if (contentDelta) {
-                      // Append to the accumulated summary content
-                      summaryContent += contentDelta;
-
-                      // Send delta to the client
-                      controller.enqueue(
-                        encoder.encode(
-                          JSON.stringify({
-                            type: "delta",
-                            content: contentDelta,
-                          }) + "\n",
-                        ),
-                      );
-                    }
-                  } catch (e) {
-                    // Ignore invalid JSON
-                    console.error(
-                      "Error parsing JSON:",
-                      e instanceof Error ? e.message : String(e),
-                    );
-                  }
-                }
+          
+          // Create a streaming controller
+          const streamController = {
+            onData: (chunk: { type: string; content?: string }) => {
+              if (chunk.type === 'delta' && chunk.content) {
+                controller.enqueue(
+                  encoder.encode(
+                    JSON.stringify({
+                      type: "delta",
+                      content: chunk.content,
+                    }) + "\n",
+                  ),
+                );
               }
+            },
+            onComplete: (response: { content: string }) => {
+              controller.enqueue(
+                encoder.encode(
+                  JSON.stringify({
+                    type: "complete",
+                    summary: response.content || "Could not generate summary from the provided PDF.",
+                  }) + "\n",
+                ),
+              );
+              controller.close();
+            },
+            onError: (error: string) => {
+              controller.enqueue(
+                encoder.encode(
+                  JSON.stringify({
+                    type: "error",
+                    error,
+                  }) + "\n",
+                ),
+              );
+              controller.close();
             }
-          } finally {
-            reader.cancel();
-          }
-
-          // Send complete message when done
-          controller.enqueue(
-            encoder.encode(
-              JSON.stringify({
-                type: "complete",
-                summary:
-                  summaryContent ||
-                  "Could not generate summary from the provided PDF.",
-              }) + "\n",
-            ),
+          };
+          
+          // Process the streaming request
+          await llmService.processStream(
+            {
+              model: DEFAULT_MODEL,
+              messages: messages as Array<{role: "user" | "assistant" | "system", content: string}>,
+              stream: true,
+            },
+            streamController
           );
         } catch (error) {
           console.error("Streaming error:", error);
@@ -406,7 +357,6 @@ export async function POST(request: NextRequest) {
               }) + "\n",
             ),
           );
-        } finally {
           controller.close();
         }
       },

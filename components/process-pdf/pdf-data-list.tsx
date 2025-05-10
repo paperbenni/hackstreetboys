@@ -400,8 +400,8 @@ export function PDFDataList({
       {editingItem && (
         <OrderItemDialog
           isOpen={Boolean(editingItem)}
-          onClose={() => setEditingItem(null)}
-          onSave={(updatedItem) => {
+          onCloseAction={() => setEditingItem(null)}
+          onSaveAction={(updatedItem) => {
             handleUpdateItem(updatedItem);
             setEditingItem(null);
           }}
