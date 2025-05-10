@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { OPENROUTER_API_URL, getApiHeaders } from "@/lib/api/openrouter";
+import { OPENROUTER_API_URL, getApiHeaders, DEFAULT_MODEL } from "@/lib/api/openrouter";
 import { extractTextFromPdf } from "@/lib/pdf/pdf-parser";
 
 // Set a maximum file size for uploads (10MB)
@@ -249,7 +249,7 @@ export async function POST(request: NextRequest) {
       method: "POST",
       headers: getApiHeaders(apiKey),
       body: JSON.stringify({
-        model: "anthropic/claude-3-haiku:beta", // Using a smaller model for efficiency
+        model: DEFAULT_MODEL, // Use default model from configuration
         messages: [{ role: "user", content: prompt }],
         max_tokens: 100000, // Ensure we have enough tokens for complete responses
         stream: true, // Enable streaming for large responses
