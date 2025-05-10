@@ -18,7 +18,7 @@
     "lucide-react": "^0.509.0",
     "multer": "^1.4.5-lts.2",
     "next": "15.3.2",
-    "pdf-parse": "^1.1.1",
+
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.56.3",

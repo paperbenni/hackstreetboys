@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { OPENROUTER_API_URL, getApiHeaders } from '@/lib/api/openrouter';
 import { extractTextFromPdf } from '@/lib/pdf/pdf-parser';
-import fs from 'fs';
-import path from 'path';
 
 // Set a maximum file size for uploads (10MB)
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -57,10 +55,10 @@ export async function POST(request: NextRequest) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // Parse the PDF file using our custom wrapper
-    let pdfText = "";
+    // Parse the PDF file using our custom wrapper that uses markitdown CLI
+    let pdfMarkdown = "";
     try {
-      pdfText = await extractTextFromPdf(buffer);
+      pdfMarkdown = await extractTextFromPdf(buffer);
     } catch (err) {
       console.error('PDF extraction error:', err);
       return NextResponse.json(
@@ -69,27 +67,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // If the PDF is empty or has minimal text, return an error
-    if (!pdfText || pdfText.trim().length < 10) {
+    // If the PDF is empty or has minimal markdown, return an error
+    if (!pdfMarkdown || pdfMarkdown.trim().length < 10) {
       return NextResponse.json(
-        { error: 'The PDF appears to be empty or contains too little text' },
+        { error: 'The PDF appears to be empty or contains too little content' },
         { status: 400 }
       );
     }
 
-    // Truncate the text if it's too long (limit to ~4000 characters to avoid token limits)
-    const truncatedText = pdfText.length > 4000
-      ? pdfText.substring(0, 4000) + '...'
-      : pdfText;
+    // Truncate the markdown if it's too long (limit to ~4000 characters to avoid token limits)
+    const truncatedMarkdown = pdfMarkdown.length > 4000
+      ? pdfMarkdown.substring(0, 4000) + '...'
+      : pdfMarkdown;
 
-    // Create a prompt for generating a summary from the PDF text
+    // Create a prompt for generating a summary from the PDF markdown content
     const prompt = `
-      Create a clear, concise summary of the following text from a PDF document.
+      Create a clear, concise summary of the following markdown content from a PDF document.
       Capture the main ideas, key points, and important details in a well-structured summary.
       Keep the summary informative and comprehensive, focusing on the most important information.
       
-      Text from PDF:
-      ${truncatedText}
+      Markdown content from PDF:
+      ${truncatedMarkdown}
     `;
 
     // Send request to OpenRouter API
@@ -153,22 +151,4 @@ export async function GET() {
   return NextResponse.json({ message: 'Use POST to upload a PDF file' });
 }
 
-// Create the test directory if it doesn't exist
-// This is to handle pdf-parse's expectation for test files
-try {
-  const testDir = path.join(process.cwd(), 'test', 'data');
-  if (!fs.existsSync(testDir)) {
-    fs.mkdirSync(testDir, { recursive: true });
-  }
-  
-  // Create empty test files that pdf-parse might look for
-  const testFiles = ['05-versions-space.pdf'];
-  testFiles.forEach(file => {
-    const filePath = path.join(testDir, file);
-    if (!fs.existsSync(filePath)) {
-      fs.writeFileSync(filePath, '%PDF-1.5\n%Test');
-    }
-  });
-} catch (err) {
-  console.warn('Warning: Could not create test directory for pdf-parse:', err);
-}
+// No setup needed for markitdown CLI tool as it operates directly on the PDF file

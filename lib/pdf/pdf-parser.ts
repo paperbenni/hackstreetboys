@@ -1,25 +1,41 @@
-import pdfParse from 'pdf-parse/lib/pdf-parse';
+import { exec } from 'child_process';
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
+import { promisify } from 'util';
+
+const execAsync = promisify(exec);
 
 /**
- * Extract text from a PDF buffer
+ * Extract text from a PDF buffer using markitdown CLI tool
  * @param buffer The PDF file as a Buffer
- * @returns The extracted text content
+ * @returns The extracted markdown content
  */
 export async function extractTextFromPdf(buffer: Buffer): Promise<string> {
   try {
-    // Configure options to skip unnecessary processing
-    const options = {
-      // Skip rendering of images
-      renderImages: false,
-      // Max pages to process
-      max: 0, // 0 means all pages
-    };
-
-    // Process the PDF
-    const data = await pdfParse(buffer, options);
+    // Create a temporary file
+    const tempDir = os.tmpdir();
+    const tempFilePath = path.join(tempDir, `pdf-${Date.now()}.pdf`);
     
-    // Return the extracted text
-    return data.text || '';
+    // Write the buffer to the temporary file
+    fs.writeFileSync(tempFilePath, buffer);
+    
+    try {
+      // Run the markitdown CLI tool
+      const { stdout, stderr } = await execAsync(`markitdown "${tempFilePath}"`);
+      
+      if (stderr) {
+        console.warn('markitdown stderr:', stderr);
+      }
+      
+      // Return the markdown output
+      return stdout || '';
+    } finally {
+      // Clean up the temporary file
+      if (fs.existsSync(tempFilePath)) {
+        fs.unlinkSync(tempFilePath);
+      }
+    }
   } catch (error) {
     console.error('Error parsing PDF:', error);
     throw new Error('Failed to extract text from PDF');

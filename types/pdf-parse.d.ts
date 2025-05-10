@@ -1,28 +1,7 @@
-declare module 'pdf-parse/lib/pdf-parse' {
-  interface PdfData {
-    text: string;
-    numpages: number;
-    numrender: number;
-    info: {
-      PDFFormatVersion: string;
-      IsAcroFormPresent: boolean;
-      IsXFAPresent: boolean;
-      [key: string]: unknown;
-    };
-    metadata: {
-      [key: string]: unknown;
-    };
-    version: string;
-  }
+// This type definition file is kept for reference but is no longer used
+// as we've moved from pdf-parse to the markitdown CLI tool.
 
-  interface PdfParseOptions {
-    max?: number;
-    renderImages?: boolean;
-    renderPages?: boolean;
-    version?: string;
-  }
+// The markitdown CLI tool processes PDFs and returns markdown content directly
+// through stdout, so no type definitions are needed for the tool itself.
 
-  function pdfParse(dataBuffer: Buffer, options?: PdfParseOptions): Promise<PdfData>;
-
-  export default pdfParse;
-}
+export {};
