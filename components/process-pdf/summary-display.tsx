@@ -1,14 +1,16 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import DebugTab from "@/components/DebugTab";
-import { scrollableContainerStyle, ensureNoTruncation } from "@/lib/utils";
+import JsonTreeTab from "@/components/JsonTreeTab";
+import { scrollableContainerStyle, ensureNoTruncation, extractJsonFromMarkdown } from "@/lib/utils";
 
 interface SummaryDisplayProps {
   summary: string;
   isLoading: boolean;
   rawMarkdown?: string;
+  jsonData?: string;
   maxHeight?: string;
   preventTruncation?: boolean;
   streaming?: boolean;
@@ -18,11 +20,49 @@ export function SummaryDisplay({
   summary, 
   isLoading, 
   rawMarkdown, 
+  jsonData,
   maxHeight = "70vh",
   preventTruncation = true,
   streaming = false
 }: SummaryDisplayProps) {
-  const [activeTab, setActiveTab] = useState<'summary' | 'debug'>('summary');
+  const [activeTab, setActiveTab] = useState<'summary' | 'debug' | 'json'>('summary');
+  
+  // Extract JSON from the summary or rawMarkdown
+  const extractedJsonData = useMemo(() => {
+    // If jsonData is provided directly, use it
+    if (jsonData) return jsonData;
+    
+    // Otherwise try to extract from rawMarkdown first (as it may contain more complete JSON)
+    if (rawMarkdown) {
+      const extracted = extractJsonFromMarkdown(rawMarkdown);
+      try {
+        const parsed = JSON.parse(extracted);
+        if (Object.keys(parsed).length > 0 || (Array.isArray(parsed) && parsed.length > 0)) {
+          return extracted;
+        }
+      } catch {
+        // Failed to parse JSON from rawMarkdown, will try summary next
+      }
+    }
+    
+    // If no valid JSON in rawMarkdown, try the summary
+    if (summary) {
+      return extractJsonFromMarkdown(summary);
+    }
+    
+    return "{}";
+  }, [jsonData, rawMarkdown, summary]);
+  
+  // Check if we have valid JSON to display
+  const hasValidJson = useMemo(() => {
+    try {
+      const parsed = JSON.parse(extractedJsonData);
+      return Object.keys(parsed).length > 0 || 
+             (Array.isArray(parsed) && parsed.length > 0);
+    } catch {
+      return false;
+    }
+  }, [extractedJsonData]);
   const contentRef = useRef<HTMLDivElement>(null);
   
   // Auto-scroll to bottom when content updates during streaming
@@ -79,6 +119,18 @@ export function SummaryDisplay({
                 Debug
               </button>
             )}
+            {hasValidJson && (
+              <button
+                onClick={() => setActiveTab('json')}
+                className={`px-4 py-2 text-sm font-medium ${
+                  activeTab === 'json'
+                    ? 'bg-slate-100 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400'
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                }`}
+              >
+                JSON Tree
+              </button>
+            )}
           </div>
           <CardContent className="p-0 h-full">
             {activeTab === 'summary' ? (
@@ -121,7 +173,7 @@ export function SummaryDisplay({
                   </div>
                 )}
               </div>
-            ) : (
+            ) : activeTab === 'debug' ? (
               <div className="p-3 sm:p-6 h-[calc(100%-40px)]">
                 <DebugTab 
                   markdown={rawMarkdown || ''} 
@@ -129,7 +181,15 @@ export function SummaryDisplay({
                   preventTruncation={preventTruncation} 
                 />
               </div>
-            )}
+            ) : activeTab === 'json' ? (
+              <div className="p-3 sm:p-6 h-[calc(100%-40px)]">
+                <JsonTreeTab
+                  jsonData={extractedJsonData}
+                  maxHeight={maxHeight}
+                  preventTruncation={preventTruncation}
+                />
+              </div>
+            ) : null}
           </CardContent>
         </Card>
       )}

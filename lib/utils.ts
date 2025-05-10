@@ -111,6 +111,51 @@ export async function processStreamingResponse(
   }
 }
 
+/**
+ * Utility function to extract JSON from markdown text (like LLM responses)
+ * This handles cases where JSON is wrapped in markdown code blocks
+ */
+export function extractJsonFromMarkdown(markdown: string): string {
+  // First check if the text already appears to be valid JSON
+  try {
+    JSON.parse(markdown);
+    return markdown; // It's already valid JSON
+  } catch {
+    // Not valid JSON, continue extracting
+  }
+
+  // Try to extract JSON from code blocks
+  const jsonCodeBlockRegex = /```(?:json)?\s*\n([\s\S]*?)\n```/;
+  const match = markdown.match(jsonCodeBlockRegex);
+  
+  if (match && match[1]) {
+    try {
+      // Validate the extracted content is valid JSON
+      JSON.parse(match[1]);
+      return match[1];
+    } catch {
+      // Continue with other extraction methods
+    }
+  }
+  
+  // Look for anything that looks like JSON array or object
+  const jsonObjectRegex = /(\[[\s\S]*\]|\{[\s\S]*\})/;
+  const objectMatch = markdown.match(jsonObjectRegex);
+  
+  if (objectMatch && objectMatch[1]) {
+    try {
+      // Validate the extracted content
+      JSON.parse(objectMatch[1]);
+      return objectMatch[1];
+    } catch {
+      // Not valid JSON
+    }
+  }
+
+  // If we couldn't extract valid JSON, return an empty object
+  return '{}';
+}
+
 // Process custom JSON streaming format used in process-pdf endpoint
 export async function processJsonStreamingResponse(
   response: Response,

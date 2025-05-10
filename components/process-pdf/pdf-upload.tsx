@@ -16,12 +16,14 @@ interface PdfUploadProps {
   onPdfProcessedAction: (summary: string, rawMarkdown?: string) => void;
   onProcessingStartAction: () => void;
   onFileSelectedAction: (file: File | null) => void;
+  onTestJsonGenerated?: (jsonData: string) => void;
 }
 
 export function PdfUpload({
   onPdfProcessedAction,
   onProcessingStartAction,
   onFileSelectedAction,
+  onTestJsonGenerated,
 }: PdfUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -193,6 +195,99 @@ export function PdfUpload({
     // Removed finally block to manage loading state within the request callbacks
   };
 
+  // Generate test JSON data for demo purposes
+  const generateTestJsonData = () => {
+    const sampleJson = `
+[
+  {
+    "name": "Innentüren",
+    "content": [
+      {
+        "name": "Holztüren mit Stahl-U-Zarge",
+        "content": [
+          {
+            "sku": "620001",
+            "description": "Nuss furniert - 80cm Breite",
+            "price": 399.99,
+            "available": true,
+            "properties": {
+              "material": "Nuss furniert",
+              "width": 80,
+              "height": 200,
+              "warranty": "5 Jahre"
+            }
+          },
+          {
+            "sku": "620002",
+            "description": "Eiche furniert - 80cm Breite",
+            "price": 349.99,
+            "available": true,
+            "properties": {
+              "material": "Eiche furniert",
+              "width": 80,
+              "height": 200,
+              "warranty": "5 Jahre"
+            }
+          }
+        ]
+      },
+      {
+        "name": "Glastüren mit Holzzarge",
+        "content": [
+          {
+            "sku": "620010",
+            "description": "Milchglas - 80cm Breite",
+            "price": 499.99,
+            "available": false,
+            "properties": {
+              "material": "Milchglas",
+              "width": 80,
+              "height": 200,
+              "warranty": "3 Jahre"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Außentüren",
+    "content": [
+      {
+        "name": "Haustüren",
+        "content": [
+          {
+            "sku": "630001",
+            "description": "Sicherheitstür Stahl - 100cm Breite",
+            "price": 899.99,
+            "available": true,
+            "properties": {
+              "material": "Stahl",
+              "width": 100,
+              "height": 210,
+              "warranty": "10 Jahre",
+              "securityClass": "RC3"
+            }
+          }
+        ]
+      }
+    ]
+  }
+]`;
+    
+    // Generate a fake summary and store sample JSON in rawMarkdown
+    const summary = "Sample summary of items ordered from the catalog.";
+    const rawMarkdown = `\`\`\`json\n${sampleJson}\n\`\`\``;
+    
+    // Call the processing action with our sample data
+    onPdfProcessedAction(summary, rawMarkdown);
+    
+    // If we have a callback for JSON data, extract the JSON and call it
+    if (onTestJsonGenerated) {
+      onTestJsonGenerated(sampleJson);
+    }
+  };
+
   return (
     <div className="w-full">
       <Card className="w-full border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-900/30">
@@ -259,6 +354,17 @@ export function PdfUpload({
           )}
 
           <div className="mt-4 flex justify-end">
+            {/* Always show Test JSON button */}
+            <Button
+              type="button"
+              variant="outline"
+              className="mr-auto border-slate-200 dark:border-slate-700"
+              onClick={generateTestJsonData}
+              disabled={isUploading}
+            >
+              Generate Test JSON
+            </Button>
+            
             {selectedFile && (
               <>
                 <Button

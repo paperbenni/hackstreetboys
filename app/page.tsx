@@ -7,10 +7,12 @@ import { SummaryDisplay } from "@/components/process-pdf/summary-display";
 import { ApiKeyWarning } from "@/components/api-key-warning";
 import { Button } from "@/components/ui/button";
 import { RefreshCcw } from "lucide-react";
+import { extractJsonFromMarkdown } from "@/lib/utils";
 
 export default function ProcessDocumentPage() {
   const [summary, setSummary] = useState<string>("");
   const [rawMarkdown, setRawMarkdown] = useState<string>("");
+  const [jsonData, setJsonData] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
@@ -21,9 +23,22 @@ export default function ProcessDocumentPage() {
   const handlePdfProcessed = (summaryText: string, markdownText: string = "") => {
     setSummary(summaryText);
     setRawMarkdown(markdownText);
+    // Try to extract JSON from the response
+    try {
+      const extractedJson = extractJsonFromMarkdown(markdownText || summaryText);
+      setJsonData(extractedJson);
+    } catch (error) {
+      console.error("Failed to extract JSON:", error);
+      setJsonData("{}");
+    }
     // Keep loading state true while streaming is happening
     // The loading state will be set to false only when processing is complete
     // in the PdfUpload component's onComplete handler
+  };
+
+  const handleTestJsonGenerated = (json: string) => {
+    setJsonData(json);
+    setIsLoading(false);
   };
 
   const handleFileSelected = (file: File | null) => {
@@ -33,6 +48,7 @@ export default function ProcessDocumentPage() {
   const handleNewSummary = () => {
     setSummary("");
     setRawMarkdown("");
+    setJsonData("");
     setIsLoading(false);
     // Keep the file selected so user can still see the PDF
   };
@@ -47,6 +63,7 @@ export default function ProcessDocumentPage() {
             onPdfProcessedAction={handlePdfProcessed}
             onProcessingStartAction={handleProcessingStart}
             onFileSelectedAction={handleFileSelected}
+            onTestJsonGenerated={handleTestJsonGenerated}
           />
         </div>
 
@@ -86,6 +103,7 @@ export default function ProcessDocumentPage() {
                   summary={summary} 
                   isLoading={isLoading} 
                   rawMarkdown={rawMarkdown}
+                  jsonData={jsonData}
                   maxHeight="70vh"
                   streaming={isLoading && summary.length > 0}
                 />
