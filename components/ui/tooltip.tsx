@@ -1,86 +1,30 @@
-import React, { useState, useRef } from "react";
-import { cn } from "@/lib/utils";
+"use client"
 
-interface TooltipProps {
-  children: React.ReactNode;
-  className?: string;
-}
+import * as React from "react"
+import * as TooltipPrimitive from "@radix-ui/react-tooltip"
 
-interface TooltipContentProps {
-  children: React.ReactNode;
-  className?: string;
-}
+import { cn } from "@/lib/utils"
 
-interface TooltipTriggerProps {
-  children: React.ReactNode;
-  asChild?: boolean;
-}
+const TooltipProvider = TooltipPrimitive.Provider
 
-interface TooltipContextValue {
-  isOpen: boolean;
-  setIsOpen: (open: boolean) => void;
-  triggerRef: React.RefObject<HTMLDivElement>;
-}
+const Tooltip = TooltipPrimitive.Root
 
-const TooltipContext = React.createContext<TooltipContextValue | undefined>(undefined);
+const TooltipTrigger = TooltipPrimitive.Trigger
 
-function useTooltip() {
-  const context = React.useContext(TooltipContext);
-  if (!context) {
-    throw new Error("useTooltip must be used within a TooltipProvider");
-  }
-  return context;
-}
+const TooltipContent = React.forwardRef<
+  React.ElementRef<typeof TooltipPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content>
+>(({ className, sideOffset = 4, ...props }, ref) => (
+  <TooltipPrimitive.Content
+    ref={ref}
+    sideOffset={sideOffset}
+    className={cn(
+      "z-50 overflow-hidden rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-950 shadow-md animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-50",
+      className
+    )}
+    {...props}
+  />
+))
+TooltipContent.displayName = TooltipPrimitive.Content.displayName
 
-const TooltipProvider = ({ children }: { children: React.ReactNode }) => {
-  return <>{children}</>;
-};
-
-const Tooltip = ({ children, className }: TooltipProps) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const triggerRef = useRef<HTMLDivElement>(null);
-
-  return (
-    <TooltipContext.Provider value={{ isOpen, setIsOpen, triggerRef }}>
-      <div className={cn("relative inline-flex", className)}>
-        {children}
-      </div>
-    </TooltipContext.Provider>
-  );
-};
-
-const TooltipTrigger = ({ children, asChild = false }: TooltipTriggerProps) => {
-  const { setIsOpen, triggerRef } = useTooltip();
-  
-  return (
-    <div
-      ref={triggerRef}
-      onMouseEnter={() => setIsOpen(true)}
-      onMouseLeave={() => setIsOpen(false)}
-      onFocus={() => setIsOpen(true)}
-      onBlur={() => setIsOpen(false)}
-      className={asChild ? "" : "inline-flex"}
-    >
-      {children}
-    </div>
-  );
-};
-
-const TooltipContent = ({ children, className }: TooltipContentProps) => {
-  const { isOpen } = useTooltip();
-  
-  if (!isOpen) return null;
-  
-  return (
-    <div
-      className={cn(
-        "z-50 absolute top-full mt-1 overflow-hidden rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-950 shadow-md dark:border-slate-800 dark:bg-slate-950 dark:text-slate-50",
-        className
-      )}
-    >
-      {children}
-    </div>
-  );
-};
-
-export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider };
+export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider }
