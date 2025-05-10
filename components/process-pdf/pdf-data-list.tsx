@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import {
   extractJsonFromMarkdown,
 } from "@/lib/utils";
+import { Download } from "lucide-react";
 import { OrderItemDialog } from "./order-item-dialog";
 import { OrderItemDisplay } from "./order-item-display";
 import DebugTab from "@/components/DebugTab";
@@ -249,6 +250,11 @@ export function PDFDataList({
   const renderSummary = () => {
     return <OrderSummary summary={summary} title="Order Items Summary" />;
   };
+  
+  // Handle export functionality
+  const handleExport = () => {
+    console.log("Hello World! Export functionality will be implemented here.");
+  };
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -296,23 +302,34 @@ export function PDFDataList({
               ) : (
                 <div className="max-h-[70vh] overflow-y-auto overflow-x-hidden">
               {/* Control buttons */}
-              <div className="p-2 flex justify-end space-x-2 sticky top-0 z-10 bg-white dark:bg-slate-950 shadow-sm">
+              <div className="p-2 flex justify-between sticky top-0 z-10 bg-white dark:bg-slate-950 shadow-sm">
                 <Button
-                  variant="outline"
+                  variant="default"
                   size="sm"
-                  onClick={expandAll}
-                  className="text-xs h-7"
+                  onClick={handleExport}
+                  className="text-xs h-7 flex items-center gap-1"
                 >
-                  Expand All
+                  <Download className="h-3.5 w-3.5" />
+                  Export
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={collapseAll}
-                  className="text-xs h-7"
-                >
-                  Collapse All
-                </Button>
+                <div className="flex space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={expandAll}
+                    className="text-xs h-7"
+                  >
+                    Expand All
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={collapseAll}
+                    className="text-xs h-7"
+                  >
+                    Collapse All
+                  </Button>
+                </div>
               </div>
 
               {/* Data content */}
