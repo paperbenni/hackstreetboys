@@ -6,9 +6,10 @@ interface MarkdownProps {
   className?: string;
   maxHeight?: string;
   preventTruncation?: boolean;
+  maxContentSize?: number;
 }
 
-export function Markdown({ content, className, maxHeight = "70vh", preventTruncation = true }: MarkdownProps) {
+export function Markdown({ content, className, maxHeight = "70vh", preventTruncation = true, maxContentSize }: MarkdownProps) {
   const { resolvedTheme } = useTheme() || { resolvedTheme: undefined };
   const isDarkMode = resolvedTheme === 'dark';
 
@@ -19,6 +20,7 @@ export function Markdown({ content, className, maxHeight = "70vh", preventTrunca
       maxHeight={maxHeight}
       preventTruncation={preventTruncation}
       darkMode={isDarkMode}
+      maxContentSize={maxContentSize}
     />
   );
 }
