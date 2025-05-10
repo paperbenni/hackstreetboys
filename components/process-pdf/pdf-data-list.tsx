@@ -210,7 +210,9 @@ export function PDFDataList({
 
   // Render a single order item
   const renderOrderItem = (item: Order, level: number = 0) => {
-    return <OrderItemDisplay item={item} onEdit={setEditingItem} level={level} />;
+    return (
+      <OrderItemDisplay item={item} onEdit={setEditingItem} level={level} />
+    );
   };
 
   // Handle updating an order item
@@ -267,10 +269,17 @@ export function PDFDataList({
 
     // Get flat array of orders
     const flatOrders = flattenOrderItems(parsedData);
-    
+
     // Parse the data and copy to clipboard
-    const xmlString = parse("order", flatOrders);
-    navigator.clipboard.writeText(xmlString)
+    const xmlString = parse("order", {
+      customerId: 1000,
+      type: "A",
+      shippingConditionId: 2,
+      commission: "Sägemühle",
+      items: flatOrders,
+    });
+    navigator.clipboard
+      .writeText(xmlString)
       .then(() => {
         console.log("Copied to clipboard!");
         setCopyStatus("Copied to clipboard!");
@@ -381,9 +390,7 @@ export function PDFDataList({
                     </div>
 
                     {/* Summary section */}
-                    <div className="mt-8 pt-4 border-t">
-                      {renderSummary()}
-                    </div>
+                    <div className="mt-8 pt-4 border-t">{renderSummary()}</div>
                   </>
                 ) : (
                   <div className="text-slate-500 dark:text-slate-400">
