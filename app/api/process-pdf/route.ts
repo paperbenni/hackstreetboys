@@ -84,11 +84,17 @@ export async function POST(request: NextRequest) {
     // Prompt for extracting the items
     // This is just a placeholder for now
     const prompt = `
+      You are a diligent office worker, you know that if you cannot complete
+      this task or make even a single mistake there will be grave consequences
+      for the people you love and yourself.
 
       # Instruction overview
 
       after the marker ((BEGIN_ORDERS)) you will be given a loosely structured list of orders.
-      Convert the list into json using the interfaces Order and OrderCategory described below
+      Convert the list into json using the interfaces Order and OrderCategory described below.
+      Output nothing else beside the json. Convert the entire list, do not
+      leave out any orders or abbreviate anything.
+
 
       # Interfaces
 
