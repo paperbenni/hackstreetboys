@@ -11,6 +11,7 @@ import { OrderItemDialog } from "./order-item-dialog";
 import { OrderItemDisplay } from "./order-item-display";
 import DebugTab from "@/components/DebugTab";
 import { Order, OrderCategory, OrderItemUnion, isOrder } from "./types";
+import { OrderSummary } from "./order-summary";
 
 interface PDFDataListProps {
   data: string;
@@ -246,84 +247,7 @@ export function PDFDataList({
 
   // Render the summary of required Artikel
   const renderSummary = () => {
-    if (Object.keys(summary).length === 0) {
-      return null;
-    }
-
-    // Group items by SKU category
-    const groupedItems: {
-      [key: string]: {
-        name: string;
-        items: { sku: string; name: string; count: number }[];
-      };
-    } = {};
-
-    // Define SKU categories
-    const skuCategories: { [prefix: string]: string } = {
-      "620": "Holztüren, Holzzargen",
-      "670": "Stahltüren, Stahlzargen, Rohrrahmentüren",
-      "660": "Haustüren",
-      "610": "Glastüren",
-      // Add more categories as needed
-    };
-
-    // Group items by SKU category
-    Object.entries(summary).forEach(([sku, { count, item }]) => {
-      // Determine the category based on SKU prefix
-      const prefix = sku.substring(0, 3); // Adjust as needed for your SKU format
-      const categoryName = skuCategories[prefix] || "Other";
-
-      // Initialize the category if it doesn't exist
-      if (!groupedItems[categoryName]) {
-        groupedItems[categoryName] = {
-          name: categoryName,
-          items: [],
-        };
-      }
-
-      // Add the item to the category
-      groupedItems[categoryName].items.push({
-        sku,
-        name: item,
-        count,
-      });
-    });
-
-    // Sort entries by category name
-    const sortedGroups = Object.values(groupedItems).sort((a, b) =>
-      a.name.localeCompare(b.name),
-    );
-
-    return (
-      <div className="border-t border-slate-200 dark:border-slate-800 mt-4 pt-4">
-        <h3 className="text-sm font-medium mb-2">Summary by Category</h3>
-        <div className="space-y-3">
-          {sortedGroups.map((category) => (
-            <div key={category.name} className="mb-3">
-              <h4 className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                {category.name}
-              </h4>
-              <div className="space-y-1">
-                {category.items.map((item) => (
-                  <div
-                    key={item.sku}
-                    className="flex justify-between text-xs pb-1"
-                  >
-                    <div className="flex-grow">
-                      <span className="text-slate-500 mr-1">{item.sku}:</span>
-                      {item.name}
-                    </div>
-                    <div className="text-right">
-                      {item.count} {item.count === 1 ? "pc" : "pcs"}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
+    return <OrderSummary summary={summary} title="Order Items Summary" />;
   };
 
   return (

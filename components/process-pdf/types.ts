@@ -24,3 +24,22 @@ export type OrderItemUnion = Order | OrderCategory;
 export function isOrder(item: OrderItemUnion): item is Order {
   return "sku" in item;
 }
+
+// Summary related types
+export interface SummaryItem {
+  sku: string;
+  name: string;
+  count: number;
+}
+
+export interface SummaryCategory {
+  name: string;
+  items: SummaryItem[];
+}
+
+export interface OrderSummary {
+  [key: string]: {
+    count: number;
+    item: string;
+  };
+}
