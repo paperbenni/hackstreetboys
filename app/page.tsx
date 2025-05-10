@@ -148,6 +148,7 @@ export default function ProcessDocumentPage() {
                   isLoading={isLoading} 
                   rawMarkdown={rawMarkdown}
                   maxHeight="70vh"
+                  streaming={isLoading && Boolean(summary)}
                 />
               </div>
             )}

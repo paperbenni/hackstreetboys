@@ -15,6 +15,7 @@ import {
   extractJsonFromMarkdown,
 } from "@/lib/utils";
 import { OrderItemDialog } from "./order-item-dialog";
+import DebugTab from "@/components/DebugTab";
 
 // Define interfaces as specified in the schema
 interface Order {
@@ -33,45 +34,58 @@ interface Order {
 
 interface OrderCategory {
   name: string;
-  content: OrderItem[];
+  content: OrderItemUnion[];
 }
 
 // Type to determine if an item is an Order or OrderCategory
-type OrderItem = Order | OrderCategory;
+type OrderItemUnion = Order | OrderCategory;
 
 // Helper function to check if an item is an Order or OrderCategory
-function isOrder(item: OrderItem): item is Order {
+function isOrder(item: OrderItemUnion): item is Order {
   return "sku" in item;
 }
 
 interface PDFDataListProps {
-  jsonData: string;
+  data: string;
   isLoading: boolean;
-  error: string | null;
+  rawMarkdown?: string;
+  maxHeight?: string;
+  error?: string | null;
+  streaming?: boolean;
 }
 
 export function PDFDataList({
-  jsonData,
+  data,
   isLoading,
-  error,
+  rawMarkdown = "",
+  maxHeight = "70vh",
+  error = null,
+  streaming = false,
 }: PDFDataListProps) {
   const [activeTab, setActiveTab] = useState<"data" | "debug">("data");
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
     new Set(),
   );
-  const [parsedData, setParsedData] = useState<OrderItem[]>([]);
+  const [parsedData, setParsedData] = useState<OrderItemUnion[]>([]);
   const [summary, setSummary] = useState<{
     [key: string]: { count: number; item: string };
   }>({});
   const [jsonError, setJsonError] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<Order | null>(null);
 
+  // No need to reset tab now, since we always show debug tab when there's data
+  useEffect(() => {
+    if (!data && !rawMarkdown && activeTab === "debug") {
+      setActiveTab("data");
+    }
+  }, [data, rawMarkdown, activeTab]);
+
   // Extract and parse JSON data from the response
   useEffect(() => {
-    if (jsonData) {
+    if (data) {
       try {
         // Extract JSON from markdown if needed
-        const extractedJson = extractJsonFromMarkdown(jsonData);
+        const extractedJson = extractJsonFromMarkdown(data);
         let parsedJson;
 
         try {
@@ -85,7 +99,7 @@ export function PDFDataList({
         }
 
         // Initialize itemsArray for different possible JSON structures
-        let itemsArray: OrderItem[] = [];
+        let itemsArray: OrderItemUnion[] = [];
 
         // Handle if the response is directly an array
         if (Array.isArray(parsedJson)) {
@@ -107,20 +121,20 @@ export function PDFDataList({
           );
           if (arrays.length > 0) {
             // Use the first array found
-            itemsArray = arrays[0] as OrderItem[];
+            itemsArray = arrays[0] as OrderItemUnion[];
           } else {
             // Wrap the object in an array if no arrays were found
-            itemsArray = [parsedJson as OrderItem];
+            itemsArray = [parsedJson as OrderItemUnion];
           }
         }
 
         // Update state with parsed data
         if (itemsArray.length > 0) {
-          setParsedData(itemsArray as OrderItem[]);
+          setParsedData(itemsArray as OrderItemUnion[]);
           setJsonError(null);
 
           // Generate summary for required Artikel
-          generateSummary(itemsArray as OrderItem[]);
+          generateSummary(itemsArray as OrderItemUnion[]);
         } else {
           setJsonError("No valid data found in the response.");
         }
@@ -133,13 +147,13 @@ export function PDFDataList({
         );
       }
     }
-  }, [jsonData]);
+  }, [data]);
 
   // Generate a summary of article quantities for the required Artikel
-  const generateSummary = (items: OrderItem[]) => {
+  const generateSummary = (items: OrderItemUnion[]) => {
     const summary: { [key: string]: { count: number; item: string } } = {};
 
-    const processItem = (item: OrderItem, path: string = "") => {
+    const processItem = (item: OrderItemUnion, path: string = "") => {
       if (isOrder(item)) {
         const sku = item.sku;
         const quantity = parseInt(item.quantity) || 1;
@@ -185,7 +199,7 @@ export function PDFDataList({
   const expandAll = () => {
     const newExpanded = new Set<string>();
 
-    const findAllPaths = (items: OrderItem[], path: string = "") => {
+    const findAllPaths = (items: OrderItemUnion[], path: string = "") => {
       items.forEach((item) => {
         if (!isOrder(item)) {
           const categoryName = item.name;
@@ -374,7 +388,7 @@ export function PDFDataList({
 
   // Handle updating an order item
   const handleUpdateItem = (updatedItem: Order) => {
-    const updateItemInTree = (items: OrderItem[]): OrderItem[] => {
+    const updateItemInTree = (items: OrderItemUnion[]): OrderItemUnion[] => {
       return items.map(item => {
         if (isOrder(item)) {
           if (editingItem && item.sku === editingItem.sku && item.name === editingItem.name) {
@@ -491,16 +505,18 @@ export function PDFDataList({
           onClick={() => setActiveTab("data")}
           className="text-xs px-3"
         >
-          Extracted Data
+          Data View
         </Button>
-        <Button
-          variant={activeTab === "debug" ? "default" : "outline"}
-          size="sm"
-          onClick={() => setActiveTab("debug")}
-          className="text-xs px-3"
-        >
-          Debug View
-        </Button>
+        {(rawMarkdown || data) && (
+          <Button
+            variant={activeTab === "debug" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setActiveTab("debug")}
+            className="text-xs px-3"
+          >
+            Debug View
+          </Button>
+        )}
       </div>
 
       <Card className="flex-grow overflow-hidden">
@@ -516,10 +532,12 @@ export function PDFDataList({
                   {error || jsonError}
                 </div>
               ) : activeTab === "debug" ? (
-                <div className="max-h-[70vh] overflow-y-auto overflow-x-hidden">
-                  <pre className="p-4 overflow-x-auto text-xs">
-                    {jsonData}
-                  </pre>
+                <div className="p-4">
+                  <DebugTab 
+                    markdown={rawMarkdown || data} 
+                    maxHeight={maxHeight}
+                    preventTruncation={true}
+                  />
                 </div>
               ) : (
                 <div className="max-h-[70vh] overflow-y-auto overflow-x-hidden">
@@ -580,7 +598,7 @@ export function PDFDataList({
             handleUpdateItem(updatedItem);
             setEditingItem(null);
           }}
-          item={editingItem}
+          item={editingItem as Order}
         />
       )}
     </div>

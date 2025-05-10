@@ -8,8 +8,8 @@ import { Checkbox } from "../ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { Label } from "../ui/label";
 
-// Define types for OrderItem
-interface OrderItem {
+// Define interface for Order
+interface Order {
   sku: string;
   name: string;
   text: string;
@@ -26,8 +26,8 @@ interface OrderItem {
 interface OrderItemDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (updatedItem: OrderItem) => void;
-  item: OrderItem;
+  onSave: (updatedItem: Order) => void;
+  item: Order;
 }
 
 export function OrderItemDialog({
@@ -49,6 +49,7 @@ export function OrderItemDialog({
   const [relevant, setRelevant] = useState(item.relevant !== false); // true by default
   const [unsure, setUnsure] = useState(item.unsure || false);
 
+  // Using the 'on' prefix to indicate these are event handlers
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSave({

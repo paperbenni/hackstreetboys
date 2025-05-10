@@ -145,11 +145,14 @@ export function PdfUpload({
             const contentStr = String(content);
             accumulatedContent += contentStr;
             // Update UI with each new piece of content
-            onPdfProcessedAction(accumulatedContent, rawMarkdownText);
+            // For the debug view, append the streaming content to the original raw markdown
+            // This preserves the header information while showing streaming updates
+            onPdfProcessedAction(accumulatedContent, `${rawMarkdownText}\n\n--- Streaming Content ---\n\n${accumulatedContent}`);
           },
           onComplete: (summary) => {
             // Final update with complete summary
-            onPdfProcessedAction(summary, rawMarkdownText);
+            // Include both the raw markdown and the final summary in the debug view
+            onPdfProcessedAction(summary, `${rawMarkdownText}\n\n--- Complete Summary ---\n\n${summary}`);
             setError(null);
             // Only stop loading when complete
             setIsUploading(false);
