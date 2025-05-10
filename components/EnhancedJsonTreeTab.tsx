@@ -97,7 +97,20 @@ const EnhancedJsonTreeTab: React.FC<EnhancedJsonTreeTabProps> = ({
     }
     
     try {
-      JSON.parse(str);
+      const parsed = JSON.parse(str);
+      
+      // Check if parsed result is actually meaningful
+      const isEmpty = 
+        (typeof parsed === 'object' && 
+         parsed !== null && 
+         Object.keys(parsed).length === 0) ||
+        (Array.isArray(parsed) && parsed.length === 0);
+      
+      if (isEmpty && str !== '{}' && str !== '[]') {
+        // Empty objects/arrays from non-empty strings might be a parsing error
+        throw new Error('Empty result from non-empty input');
+      }
+      
       setNeedsCompletion(false);
       return true;
     } catch {
@@ -130,6 +143,10 @@ const EnhancedJsonTreeTab: React.FC<EnhancedJsonTreeTabProps> = ({
         }
       } catch (error) {
         console.error("Error checking JSON:", error);
+        // Even on error, try to use last known good state
+        if (lastValidJson) {
+          console.log("Using last known good JSON state");
+        }
       }
     };
 
@@ -141,7 +158,7 @@ const EnhancedJsonTreeTab: React.FC<EnhancedJsonTreeTabProps> = ({
     
     // Clean up on unmount
     return () => clearInterval(intervalId);
-  }, [jsonData, pollingInterval, isJsonString, completedJson, needsCompletion]);
+  }, [jsonData, pollingInterval, isJsonString, completedJson, needsCompletion, lastValidJson]);
 
   // If no valid JSON at all, show empty state
   if (!lastValidJson) {
@@ -149,7 +166,10 @@ const EnhancedJsonTreeTab: React.FC<EnhancedJsonTreeTabProps> = ({
       <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-md border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400">
         <p>Waiting for valid JSON data...</p>
         {jsonData && jsonData.trim() !== '' && jsonData !== '{}' && (
-          <p className="text-xs mt-2 text-amber-600">Attempting to validate input data...</p>
+          <div className="mt-2">
+            <p className="text-xs text-amber-600">Attempting to validate input data...</p>
+            <p className="text-xs mt-1 text-slate-500">The validator will auto-complete JSON with missing closing brackets.</p>
+          </div>
         )}
       </div>
     );
@@ -166,11 +186,27 @@ const EnhancedJsonTreeTab: React.FC<EnhancedJsonTreeTabProps> = ({
           <p className="text-xs text-gray-500 mb-2">
             Missing closing brackets have been added to complete the JSON structure
           </p>
-          <button 
-            onClick={() => navigator.clipboard?.writeText?.(completedJson || '')}
-            className="text-xs px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded transition-colors">
-            Copy completed JSON
-          </button>
+          <div className="flex items-center space-x-2">
+            <button 
+              onClick={() => navigator.clipboard?.writeText?.(completedJson || '')}
+              className="text-xs px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded transition-colors">
+              Copy completed JSON
+            </button>
+            <button 
+              onClick={() => {
+                if (completedJson) {
+                  try {
+                    const formatted = JSON.stringify(JSON.parse(completedJson), null, 2);
+                    navigator.clipboard?.writeText?.(formatted || '');
+                  } catch {
+                    navigator.clipboard?.writeText?.(completedJson || '');
+                  }
+                }
+              }}
+              className="text-xs px-2 py-1 bg-green-500 hover:bg-green-600 text-white rounded transition-colors">
+              Copy formatted JSON
+            </button>
+          </div>
         </div>
       )}
       
