@@ -3,11 +3,155 @@ Below there is a specification of a data format in markdown. After the marker
 #SPECEND there will be a list of orders. extract the relevant orders to the
 specified format. Ignore anything not related to the orders. 
 
+# Hackathon Challenge Guidelines
+
+## Overview
+
+Participants must create a system that automates the classification and organization of construction elements and services according to specified categories and requirements. The challenge involves managing various types of Türen, Zubehör, and Dienstleistungen while ensuring compliance with specific standards.
+The goal is to develop an interface where users can enter a Kunden-ID and upload a Leistungsverzeichnis. The system should automatically extract and classify the information into Produkte and Dienstleistungen, then reformat them into editable Angebotspositionen that can be exported as XML for ERP integration.
+
+The functionality of the interface can be simplified as follows:
+
+#### INPUT:
+
+- Kunden-ID
+- Leistungsverzeichnis
+
+#### OUTPUT:
+
+- Offer in XML format, ready for ERP import
+
+### To support the challenge, we will provide the following:
+
+- Produkt and Servicekatalog (later in this document)
+- Two examples, each containing the Leistungsverzeichnis, a generated offer for an ERP system, and the expected XML output for the challenge.
+
+Here is an example of the expected format for the XML output:
+
+```
+<?xml version="1.0" encoding="UTF-8"?>
+<order>
+   <customerId>102736</customerId>
+   <commission>Cerdia Leitwarte</commission>
+   <type>A</type>
+   <shippingConditionId>2</shippingConditionId>
+   <items>
+      <item>
+         <sku>620001</sku>
+         <name>Bürotür mit Stahl-U-Zarge (0,76 x 2,135 m)</name>
+         <text>Hörmann Stahlfutterzarge VarioFix für Mauerwerk oder TRB<br/>- Drückerhöhe 1050 mm<br/>- Meterrissmarkierung<br/>- Maulweitenkante 15 mm<br/>- Stahlblech verzinkt, Materialstärke 1,5 mm<br/>- Hörmann BaseLine HPL Türblatt<br/>- Türgewicht ca. 18,1 kg/m²<br/>- Türstärke ca. 40,7 mm</text>
+         <quantity>1</quantity>
+         <quantityUnit>Stk</quantityUnit>
+         <price>695.00</price>
+         <priceUnit>€</priceUnit>
+         <commission>LV-POS. 1.1.10</commission>
+      </item>
+      ...here there will be as many items as there are in the Service Specification Document (Leistungsverzeichnis)
+   </items>
+</order>
+```
+
+#### Format explanation:
+
+- customerId: The ID of the customer, which should be prompted in the interface.
+- commission: The commission for the customer.
+- type: The type of the offer; it can be a static value, such as "A," which stands for 'Angebot' (offer).
+- shippingConditionId: The ID of the shipping condition, also a static value, for example, "2," which represents shipping with DHL.
+- items: The items included in the offer, represented as an array. Each item is an object with the following properties:
+  - sku: The SKU of the item, corresponding to the article numbers from the product and service catalog.
+  - name: The name of the item.
+  - text: The description of the item.
+  - quantity: The quantity of the item.
+  - quantityUnit: The unit of measurement for the quantity.
+  - price: The price of the item.
+  - priceUnit: The unit of measurement for the price.
+  - commission: The commission for the item.
+
+## Additional Guidelines:
+
+- Supplier Information: Store supplier in item (according to Fabrikat, only for elements, not for accessories and services)
+- Review and List Requirements:
+  - Check the specifications and output a list of required Gewerke / Artikel with page references as preparation for forwarding to manufacturers, including quantities.
+  - Example: 50 Holzelemente (pp. 7 - 15), 10 Stahltüren (pp. 16 - 20), 60 Beschläge (pp. 21 - 23), 3 Obentürschließer, 1 Drehtürantrieb.
+  - Suggestions for Distribution: Provide suggestions on who the specifications or individual parts can be sent to.
+- The UI interface should be easy to use and understand, it should be self explanatory.
+- All kinds of advanced UX that simplify the generation of offers are appreciated. For example, a live representation of the offer as a PDF, which users can edit inline before exporting the desired output, would be beneficial.
+
+#### Breakdown by product groups:
+
+- Holztüren
+- Stahltüren
+- Rohrrahmentüren
+- Tore
+- Stahlzargen
+- Zubehör (Drückergarnituren, Obentürschließer)
+- Drehtürantriebe
+- Haustüren
+- Fluchtwegssicherung / Fluchttürsteuerung
+
+#### Identification of specific requirements
+
+- Schallschutz
+- Einbruchschutz
+- Brandschutz
+- Rauchschutz
+- Nassraum
+- Feuchtraum
+- Klimaklasse
+- Außentüren
+- Pfosten-Riegelkonstruktion
+- Wärmedämmung (U-Wert)
+- Strahlenschutz
+- Barrierefreiheit
+- Einfachfalz
+- Stumpf
+- Doppelfalz
+
+## General Overview of Service Specification Document
+
+What is included in the specifications?
+
+- Which products?
+- What quantity of each product?
+- What requirements do these products have? (Summed up by product group)
+- Which brands are required? (Within the product group)
+  Example: Holztüren, 20 Stk., Schallschutzklasse 3, Klimaklasse 3, Gefälzt, Fabrikat Jeld-Wen
+
+List optional positions / on-demand positions separately and do not include them in the total quantity of the product groups.
+Provide a separate overview of any additional allowances required in the specifications.
+(Example 02, service-specification.pdf: Pos. 01.6 HPL-Beschichtung)
+
+## Product and Service Catalog with article numbers mapping:
+
+### Elements
+
+- Holztüren, Holzzargen - Divers-Artikelnr.: 620001
+- Stahltüren, Stahlzargen, Rohrrahmentüren - Divers-Artikelnr.: 670001
+- Haustüren - Divers-Artikelnr.: 660001
+- Glastüren - Divers-Artikelnr.: 610001
+- Tore - Divers-Artikelnr.: 680001
+- Extra guideline:
+  - The Türblatt is decisive. For instance, if a Holztürblatt with a Stahlzarge is listed, classify it under 620001.
+  - For Verglasungen, the Zarge is decisive, such as Festverglasungen with Stahlzarge classified under 670001.
+
+### Accessories
+
+- Beschläge - Divers-Artikelnr.: 240001
+- Türstopper - Divers-Artikelnr.: 330001
+- Lüftungsgitter - Divers-Artikelnr.: 450001
+- Türschließer - Divers-Artikelnr.: 290001
+- Schlösser / E-Öffner - Divers-Artikelnr.: 360001
+
+### Services
+
+- Wartung - Artikelnr.: DL8110016
+- Stundenlohnarbeiten - Artikelnr.: DL5010008
+- Sonstige Arbeiten (z.B. Baustelleneinrichtung, Aufmaß, Mustertürblatt, etc.) - Artikelnr.: DL5019990
 
 
 #SPECEND
 
-Read the @Hackathon Challenge Guidelines.md and annotate and parse the PDF that identifies the key items listed in the @Hackathon Challenge Guidelines.md and collects them together in a JSON file. The JSON schema should be formatted by taking the output.xml code snippet reference. The "text" sections may be longer at initial commissions (such as 1.1.10), but do this without copying the example output.xml in the @Hackathon Challenge Guidelines, such that the "text" section should be copy and pasted directly from the PDF unlike the summarized version as in output.xml. Also, remove the colons at the end of parsed text, before the break command. Leave the initial customerId blank as it will be entered manually. 
+Read below the "# Hackathon Challenge Guidelines" above the #SPECEND and annotate and parse the PDF that identifies the key items listed in the @Hackathon Challenge Guidelines.md and collects them together in a JSON file. The JSON schema should be formatted by taking the output.xml code snippet reference. The "text" sections may be longer at initial commissions (such as 1.1.10), but do this without copying the example output.xml in the "# Hackathon Challenge Guidelines", such that the "text" section should be copy and pasted directly from the PDF unlike the summarized version as in output.xml. Also, remove the colons at the end of parsed text, before the break command. Leave the initial customerId blank as it will be entered manually. 
 
-Now read the @Hackathon Challenge Guidelines.md and especially the ##Additional Guidelines section, where it asks for the output of a list of required Artikel. For this purpose, provide a summary of items based on the sku: accumulate the quantity numbers for each element, with a simple explanation of Element in German language. The element should be one word long, like "50 Holzelemente" or "10 Stahltüren", if the element has two or more items, identify the exact item and summarize its quantity with respect to the Artikel name. Also take extra care with the Extra guideline under @Hackathon Challenge Guidelines.md ## Elements, where the Türblatt is decisive over Zarge, and for Verglasungen, Zarge is decisive over Festverglasungen.
+Now read the "# Hackathon Challenge Guidelines" and especially the "##Additional Guidelines" section, where it asks for the output of a list of required Artikel. For this purpose, provide a summary of items based on the sku: accumulate the quantity numbers for each element, with a simple explanation of Element in German language. The element should be one word long, like "50 Holzelemente" or "10 Stahltüren", if the element has two or more items, identify the exact item and summarize its quantity with respect to the Artikel name. Also take extra care with the Extra guideline under "# Hackathon Challenge Guidelines" ## Elements, where the Türblatt is decisive over Zarge, and for Verglasungen, Zarge is decisive over Festverglasungen.
 
