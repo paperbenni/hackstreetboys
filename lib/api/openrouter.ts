@@ -35,7 +35,8 @@ export const OPENROUTER_MODELS: OpenRouterModel[] = [
   {
     id: "anthropic/claude-3-haiku:beta",
     name: "Claude 3 Haiku",
-    description: "Fastest and most compact Claude model for near-instant responses",
+    description:
+      "Fastest and most compact Claude model for near-instant responses",
     context_length: 200000,
     pricing: {
       prompt: "$0.25 / 1M tokens",
@@ -43,13 +44,13 @@ export const OPENROUTER_MODELS: OpenRouterModel[] = [
     },
   },
   {
-    id: "openai/gpt-4o",
-    name: "GPT-4o",
-    description: "OpenAI's most advanced model with optimal pricing and speed",
-    context_length: 128000,
+    id: "anthropic/claude-3.7-sonnet",
+    name: "Claude 3.7 Sonnet",
+    description: "The thingy",
+    context_length: 200000,
     pricing: {
-      prompt: "$5.00 / 1M tokens",
-      completion: "$15.00 / 1M tokens",
+      prompt: "$0.25 / 1M tokens",
+      completion: "$1.25 / 1M tokens",
     },
   },
   {
@@ -65,7 +66,8 @@ export const OPENROUTER_MODELS: OpenRouterModel[] = [
   {
     id: "meta-llama/llama-3-70b-instruct",
     name: "Llama 3 70B",
-    description: "Meta's largest open Llama model with strong reasoning capabilities",
+    description:
+      "Meta's largest open Llama model with strong reasoning capabilities",
     context_length: 8192,
     pricing: {
       prompt: "$0.90 / 1M tokens",
@@ -84,15 +86,16 @@ export const OPENROUTER_MODELS: OpenRouterModel[] = [
   },
 ];
 
-export const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
+export const OPENROUTER_API_URL =
+  "https://openrouter.ai/api/v1/chat/completions";
 
-export const DEFAULT_MODEL = "anthropic/claude-3-haiku:beta";
+export const DEFAULT_MODEL = "anthropic/claude-3.7-sonnet";
 
 export function getApiHeaders(apiKey: string) {
   return {
     "Content-Type": "application/json",
-    "Authorization": `Bearer ${apiKey}`,
-    "HTTP-Referer": typeof window !== 'undefined' ? window.location.origin : '',
+    Authorization: `Bearer ${apiKey}`,
+    "HTTP-Referer": typeof window !== "undefined" ? window.location.origin : "",
     "X-Title": "OpenRouter Next.js Demo",
   };
 }
