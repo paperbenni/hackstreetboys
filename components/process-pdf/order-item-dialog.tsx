@@ -207,7 +207,8 @@ export function OrderItemDialog({
               Cancel
             </Button>
             <Button 
-              type="submit">
+              type="submit"
+              variant="indigo">
               Save Changes
             </Button>
           </DialogFooter>

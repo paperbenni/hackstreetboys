@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import DebugTab from "@/components/DebugTab";
 import { scrollableContainerStyle, ensureNoTruncation } from "@/lib/utils";
 
@@ -60,27 +61,23 @@ export function SummaryDisplay({
       {(summary || isLoading) && (
         <Card className="w-full h-full border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-900/30 overflow-hidden">
           <div className="flex border-b border-slate-200 dark:border-slate-700">
-            <button
+            <Button
               onClick={() => setActiveTab('summary')}
-              className={`px-4 py-2 text-sm font-medium ${
-                activeTab === 'summary'
-                  ? 'bg-slate-100 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400'
-                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'
-              }`}
+              variant={activeTab === 'summary' ? 'indigo' : 'outline'}
+              size="sm"
+              className="rounded-b-none border-b-0"
             >
               Summary
-            </button>
+            </Button>
             {rawMarkdown && (
-              <button
+              <Button
                 onClick={() => setActiveTab('debug')}
-                className={`px-4 py-2 text-sm font-medium ${
-                  activeTab === 'debug'
-                    ? 'bg-slate-100 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400'
-                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'
-                }`}
+                variant={activeTab === 'debug' ? 'indigo' : 'outline'}
+                size="sm"
+                className="rounded-b-none border-b-0"
               >
                 Debug
-              </button>
+              </Button>
             )}
           </div>
           <CardContent className="p-0 h-full">

@@ -94,17 +94,17 @@ export function OrderSummary({ summary, title = "Summary by Category" }: OrderSu
         </div>
         <div className="flex space-x-2">
           <Button 
-            variant="ghost" 
+            variant="indigo" 
             size="sm" 
-            className="h-7 px-3 text-xs hover:bg-slate-200 dark:hover:bg-slate-700 transition-all duration-200"
+            className="h-7 px-3 text-xs transition-all duration-200"
             onClick={toggleAllCategories}
           >
             {expandedCategories.size === sortedGroups.length ? 'Collapse All' : 'Expand All'}
           </Button>
           <Button 
-            variant="ghost" 
+            variant="indigo" 
             size="sm" 
-            className="h-7 w-7 p-0 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all duration-200"
+            className="h-7 w-7 p-0 transition-all duration-200"
             onClick={() => setIsCollapsed(!isCollapsed)}
           >
             {isCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}

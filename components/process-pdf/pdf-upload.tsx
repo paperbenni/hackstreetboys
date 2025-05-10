@@ -364,8 +364,8 @@ export function PdfUpload({
             {/* Always show Test JSON button */}
             <Button
               type="button"
-              variant="outline"
-              className="mr-auto border-slate-200 dark:border-slate-700"
+              variant="indigo"
+              className="mr-auto"
               onClick={generateTestJsonData}
               disabled={isUploading}
             >
@@ -377,7 +377,7 @@ export function PdfUpload({
                 <Button
                   type="button"
                   variant="outline"
-                  className="mr-3 border-slate-200 dark:border-slate-700"
+                  className="mr-3"
                   onClick={resetState}
                   disabled={isUploading}
                 >
@@ -385,7 +385,7 @@ export function PdfUpload({
                 </Button>
                 <Button
                   type="button"
-                  className="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-800"
+                  variant="indigo"
                   onClick={uploadPdf}
                   disabled={isUploading}
                 >

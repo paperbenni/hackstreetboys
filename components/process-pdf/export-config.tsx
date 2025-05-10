@@ -68,7 +68,7 @@ export function ExportConfigForm({
     <div>
       <div className="flex gap-2 mb-2">
         <Button 
-          variant="default" 
+          variant="indigo" 
           onClick={() => {
             // Export with current configuration
             const completeConfig: ExportConfig = {
@@ -140,7 +140,7 @@ export function ExportConfigForm({
               </div>
 
               <div className="pt-2">
-                <Button type="submit" size="sm">
+                <Button type="submit" size="sm" variant="indigo">
                   Apply Configuration
                 </Button>
               </div>

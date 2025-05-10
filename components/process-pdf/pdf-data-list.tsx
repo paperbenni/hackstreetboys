@@ -288,7 +288,7 @@ export function PDFDataList({
     <div className="w-full h-full flex flex-col">
       <div className="flex items-center mb-4 space-x-2">
         <Button
-          variant={activeTab === "data" ? "default" : "outline"}
+          variant={activeTab === "data" ? "indigo" : "outline"}
           size="sm"
           onClick={() => setActiveTab("data")}
           className="text-xs px-4 py-2 transition-all duration-200 hover:scale-105"
@@ -297,7 +297,7 @@ export function PDFDataList({
         </Button>
         {(rawMarkdown || data) && (
           <Button
-            variant={activeTab === "debug" ? "default" : "outline"}
+            variant={activeTab === "debug" ? "indigo" : "outline"}
             size="sm"
             onClick={() => setActiveTab("debug")}
             className="text-xs px-4 py-2 transition-all duration-200 hover:scale-105"
@@ -350,18 +350,18 @@ export function PDFDataList({
                 </div>
                 <div className="flex space-x-3">
                   <Button
-                    variant="outline"
+                    variant="indigo"
                     size="sm"
                     onClick={expandAll}
-                    className="text-xs h-8 px-4 transition-all duration-200 hover:bg-slate-200 dark:hover:bg-slate-700"
+                    className="text-xs h-8 px-4 transition-all duration-200"
                   >
                     Expand All
                   </Button>
                   <Button
-                    variant="outline"
+                    variant="indigo"
                     size="sm"
                     onClick={collapseAll}
-                    className="text-xs h-8 px-4 transition-all duration-200 hover:bg-slate-200 dark:hover:bg-slate-700"
+                    className="text-xs h-8 px-4 transition-all duration-200"
                   >
                     Collapse All
                   </Button>

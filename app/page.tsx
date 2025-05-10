@@ -134,10 +134,10 @@ export default function ProcessDocumentPage() {
                   </h2>
                   {summary && !isLoading && (
                     <Button
-                      variant="outline"
+                      variant="indigo"
                       size="sm"
                       onClick={handleNewSummary}
-                      className="flex items-center gap-1 text-sm border-slate-200 dark:border-slate-700"
+                      className="flex items-center gap-1 text-sm"
                     >
                       <RefreshCcw className="h-3.5 w-3.5" /> Restart
                     </Button>
