@@ -16,6 +16,7 @@ type NavigationItem = {
 const navigationItems: NavigationItem[] = [
   { name: "Home", path: "/", mobileDisplay: true },
   { name: "Chat", path: "/chat", mobileDisplay: true },
+  { name: "JSON Validator", path: "/json-simple", mobileDisplay: true },
 ];
 
 export function Navbar() {
