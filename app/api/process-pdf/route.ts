@@ -75,11 +75,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Truncate the markdown if it's too long (limit to ~4000 characters to avoid token limits)
-    const truncatedMarkdown =
-      pdfMarkdown.length > 4000
-        ? pdfMarkdown.substring(0, 4000) + "..."
-        : pdfMarkdown;
+    // Use the full markdown content without truncation
+    const fullMarkdown = pdfMarkdown;
 
     // Prompt for extracting the items
     // This is just a placeholder for now
@@ -239,7 +236,7 @@ export async function POST(request: NextRequest) {
 
 
       ((BEGIN_ORDERS))
-      ${truncatedMarkdown}
+      ${fullMarkdown}
     `;
 
     // Send request to OpenRouter API
@@ -271,7 +268,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ 
       summary: summaryContent,
-      rawMarkdown: truncatedMarkdown 
+      rawMarkdown: fullMarkdown // Return the full markdown content
     });
   } catch (error) {
     console.error("Error processing PDF to process request:", error);
