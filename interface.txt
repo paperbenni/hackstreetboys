@@ -1,0 +1,16 @@
+interface Order {
+  sku: string;
+  name: string;
+  text: string;
+  quantity: string;
+  quantityUnit: string;
+  price: string;
+  priceUnit: string;
+  purchasePrice: string;
+  commission: string;
+}
+
+interface OrderCategory {
+  name: string;
+  content: OrderCategory[] | Order[];
+}
