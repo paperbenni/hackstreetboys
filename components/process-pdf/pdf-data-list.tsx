@@ -8,13 +8,13 @@ import {
   Package,
   Folder,
   AlertCircle,
+  Pencil,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  scrollableContainerStyle,
-  ensureNoTruncation,
   extractJsonFromMarkdown,
 } from "@/lib/utils";
+import { OrderItemDialog } from "./order-item-dialog";
 
 // Define interfaces as specified in the schema
 interface Order {
@@ -25,15 +25,15 @@ interface Order {
   quantityUnit: string;
   price: string;
   priceUnit: string;
-  purchasePrice: string;
   commission: string;
-  relevant: boolean;
-  unsure: boolean;
+  purchasePrice?: string;
+  relevant?: boolean;
+  unsure?: boolean;
 }
 
 interface OrderCategory {
   name: string;
-  content: (OrderCategory | Order)[];
+  content: OrderItem[];
 }
 
 // Type to determine if an item is an Order or OrderCategory
@@ -45,19 +45,15 @@ function isOrder(item: OrderItem): item is Order {
 }
 
 interface PDFDataListProps {
-  data: string;
+  jsonData: string;
   isLoading: boolean;
-  rawMarkdown?: string;
-  maxHeight?: string;
-  preventTruncation?: boolean;
+  error: string | null;
 }
 
 export function PDFDataList({
-  data,
+  jsonData,
   isLoading,
-  rawMarkdown,
-  maxHeight = "70vh",
-  preventTruncation = true,
+  error,
 }: PDFDataListProps) {
   const [activeTab, setActiveTab] = useState<"data" | "debug">("data");
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
@@ -68,54 +64,76 @@ export function PDFDataList({
     [key: string]: { count: number; item: string };
   }>({});
   const [jsonError, setJsonError] = useState<string | null>(null);
+  const [editingItem, setEditingItem] = useState<Order | null>(null);
 
   // Extract and parse JSON data from the response
   useEffect(() => {
-    if (!data) return;
-    try {
-      // Try to extract JSON from the input data
-      const jsonString = extractJsonFromMarkdown(data);
-      const parsed = JSON.parse(jsonString);
+    if (jsonData) {
+      try {
+        // Extract JSON from markdown if needed
+        const extractedJson = extractJsonFromMarkdown(jsonData);
+        let parsedJson;
 
-      if (Array.isArray(parsed)) {
-        setParsedData(parsed);
-        setJsonError(null);
+        try {
+          parsedJson = JSON.parse(extractedJson);
+        } catch (e) {
+          console.error("Failed to parse JSON:", e);
+          setJsonError(
+            `Invalid JSON format: ${e instanceof Error ? e.message : String(e)}`,
+          );
+          return;
+        }
 
-        // Generate summary for required Artikel
-        generateSummary(parsed);
-      } else if (typeof parsed === "object") {
-        // Handle case where the data might not be an array but an object with items property
-        if (Array.isArray(parsed.items)) {
-          setParsedData(parsed.items);
+        // Initialize itemsArray for different possible JSON structures
+        let itemsArray: OrderItem[] = [];
+
+        // Handle if the response is directly an array
+        if (Array.isArray(parsedJson)) {
+          itemsArray = parsedJson;
+        }
+        // Handle if items are in a nested property
+        else if (parsedJson.items && Array.isArray(parsedJson.items)) {
+          itemsArray = parsedJson.items;
+        }
+        // Handle if response has a content property that contains items
+        else if (parsedJson.content && Array.isArray(parsedJson.content)) {
+          itemsArray = parsedJson.content;
+        }
+        // Handle if there's a different structure entirely
+        else {
+          // Try to extract any array found in the JSON
+          const arrays = Object.values(parsedJson).filter(
+            (value) => Array.isArray(value),
+          );
+          if (arrays.length > 0) {
+            // Use the first array found
+            itemsArray = arrays[0] as OrderItem[];
+          } else {
+            // Wrap the object in an array if no arrays were found
+            itemsArray = [parsedJson as OrderItem];
+          }
+        }
+
+        // Update state with parsed data
+        if (itemsArray.length > 0) {
+          setParsedData(itemsArray as OrderItem[]);
           setJsonError(null);
 
           // Generate summary for required Artikel
-          generateSummary(parsed.items);
+          generateSummary(itemsArray as OrderItem[]);
         } else {
-          // Try to convert object to array if possible
-          const itemsArray = Object.values(parsed);
-          if (itemsArray.length > 0) {
-            setParsedData(itemsArray as OrderItem[]);
-            setJsonError(null);
-
-            // Generate summary for required Artikel
-            generateSummary(itemsArray as OrderItem[]);
-          } else {
-            setJsonError(
-              "Data could not be displayed as it is not in the expected format",
-            );
-          }
+          setJsonError("No valid data found in the response.");
         }
-      } else {
-        setJsonError("Invalid data format. Expected JSON array or object.");
+      } catch (err) {
+        console.error("Error processing JSON data:", err);
+        setJsonError(
+          `Error processing data: ${
+            err instanceof Error ? err.message : String(err)
+          }`,
+        );
       }
-    } catch (error) {
-      console.error("Failed to parse JSON data:", error);
-      setJsonError(
-        "Failed to parse JSON data. The data may be incomplete or in incorrect format.",
-      );
     }
-  }, [data]);
+  }, [jsonData]);
 
   // Generate a summary of article quantities for the required Artikel
   const generateSummary = (items: OrderItem[]) => {
@@ -134,38 +152,36 @@ export function PDFDataList({
           if (!summary[sku]) {
             summary[sku] = { count: 0, item: itemName };
           }
-
           summary[sku].count += quantity;
         }
-      } else if ("content" in item && Array.isArray(item.content)) {
+      } else if (item.content) {
         const categoryName = item.name;
         const newPath = path ? `${path} / ${categoryName}` : categoryName;
 
-        // Recursively process all items in the category
-        item.content.forEach((subItem) => {
-          processItem(subItem, newPath);
-        });
+        // Process all items in this category
+        item.content.forEach((subItem) => processItem(subItem, newPath));
       }
     };
 
-    // Process all top-level items
+    // Process all items starting with the root items
     items.forEach((item) => processItem(item));
 
+    // Update state with the generated summary
     setSummary(summary);
   };
 
-  // Toggle category expanded/collapsed state
   const toggleCategory = (categoryPath: string) => {
-    const newExpanded = new Set(expandedCategories);
-    if (newExpanded.has(categoryPath)) {
-      newExpanded.delete(categoryPath);
-    } else {
-      newExpanded.add(categoryPath);
-    }
-    setExpandedCategories(newExpanded);
+    setExpandedCategories((prev) => {
+      const newExpanded = new Set(prev);
+      if (newExpanded.has(categoryPath)) {
+        newExpanded.delete(categoryPath);
+      } else {
+        newExpanded.add(categoryPath);
+      }
+      return newExpanded;
+    });
   };
 
-  // Expand all categories
   const expandAll = () => {
     const newExpanded = new Set<string>();
 
@@ -187,53 +203,67 @@ export function PDFDataList({
     setExpandedCategories(newExpanded);
   };
 
-  // Collapse all categories
   const collapseAll = () => {
     setExpandedCategories(new Set());
   };
 
-  // Render a category and its children recursively
+  // Render a category with its content
   const renderCategory = (
-    item: OrderCategory,
-    path: string = "",
-    level: number = 0,
+    category: OrderCategory,
+    parentPath: string,
+    level: number,
   ) => {
-    const categoryName = item.name;
-    const categoryPath = path ? `${path}-${categoryName}` : categoryName;
+    const categoryName = category.name;
+    const categoryPath = parentPath
+      ? `${parentPath}-${categoryName}`
+      : categoryName;
     const isExpanded = expandedCategories.has(categoryPath);
+    const hasItems = category.content && category.content.length > 0;
+    const orderCount = hasItems
+      ? category.content.filter((item) => isOrder(item)).length
+      : 0;
+    const categoryCount = hasItems
+      ? category.content.filter((item) => !isOrder(item)).length
+      : 0;
 
     return (
-      <div key={categoryPath} className="mb-2">
+      <div className="mb-1">
         <div
-          className={`flex items-center p-2 rounded-md cursor-pointer ${
-            level === 0
-              ? "bg-slate-100 dark:bg-slate-800"
-              : "hover:bg-slate-50 dark:hover:bg-slate-800/50"
-          }`}
+          className={`flex items-center p-${
+            level * 0.5 + 2
+          } hover:bg-slate-50 dark:hover:bg-slate-800/30 rounded-md transition-colors cursor-pointer`}
           onClick={() => toggleCategory(categoryPath)}
         >
-          {isExpanded ? (
-            <ChevronDown className="h-4 w-4 mr-2 text-slate-500 flex-shrink-0" />
-          ) : (
-            <ChevronRight className="h-4 w-4 mr-2 text-slate-500 flex-shrink-0" />
+          <div className="mr-1 text-slate-400">
+            {isExpanded ? (
+              <ChevronDown className="h-4 w-4" />
+            ) : (
+              <ChevronRight className="h-4 w-4" />
+            )}
+          </div>
+          <Folder className="h-4 w-4 mr-2 text-slate-500" />
+          <span className="font-medium text-sm flex-grow">
+            {categoryName || "Unnamed Category"}
+          </span>
+          {hasItems && (
+            <div className="text-xs text-slate-500 dark:text-slate-400">
+              {orderCount > 0 && (
+                <span className="mr-2">
+                  {orderCount} item{orderCount !== 1 && "s"}
+                </span>
+              )}
+              {categoryCount > 0 && (
+                <span>
+                  {categoryCount} folder{categoryCount !== 1 && "s"}
+                </span>
+              )}
+            </div>
           )}
-          <Folder
-            className={`h-4 w-4 mr-2 ${level === 0 ? "text-indigo-500" : "text-slate-500"} flex-shrink-0`}
-          />
-          <span
-            className={`font-medium ${level === 0 ? "text-base" : "text-sm"}`}
-          >
-            {categoryName}
-          </span>
-          <span className="ml-2 text-xs text-slate-500">
-            ({item.content.length}{" "}
-            {item.content.length === 1 ? "item" : "items"})
-          </span>
         </div>
 
-        {isExpanded && (
-          <div className="pl-8 mt-1 space-y-1">
-            {item.content.map((subItem, index) => (
+        {isExpanded && hasItems && (
+          <div className={`ml-${level * 2 + 4}`}>
+            {category.content.map((subItem, index) => (
               <React.Fragment key={`${categoryPath}-${index}`}>
                 {isOrder(subItem)
                   ? renderOrderItem(subItem)
@@ -252,21 +282,35 @@ export function PDFDataList({
       <div className="flex items-start p-2 rounded-md hover:bg-slate-50 dark:hover:bg-slate-800/30 text-sm">
         <Package className="h-4 w-4 mr-2 text-slate-500 flex-shrink-0 mt-0.5" />
         <div className="flex-grow">
-          <div className="flex items-center">
-            <span className="font-medium">{item.name || "Unnamed item"}</span>
-            {item.relevant === false && (
-              <div className="ml-2 text-xs px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700">
-                Optional
-              </div>
-            )}
-            {item.unsure && (
-              <div className="relative group">
-                <AlertCircle className="h-3.5 w-3.5 ml-2 text-amber-500 flex-shrink-0 cursor-help" />
-                <div className="absolute z-50 invisible group-hover:visible top-full mt-1 left-0 overflow-hidden rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-950 shadow-md dark:border-slate-800 dark:bg-slate-950 dark:text-slate-50">
-                  <p>This item has some uncertainty in the data</p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <span className="font-medium">{item.name || "Unnamed item"}</span>
+              {item.relevant === false && (
+                <div className="ml-2 text-xs px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700">
+                  Optional
                 </div>
-              </div>
-            )}
+              )}
+              {item.unsure && (
+                <div className="relative group">
+                  <AlertCircle className="h-3.5 w-3.5 ml-2 text-amber-500 flex-shrink-0 cursor-help" />
+                  <div className="absolute z-50 invisible group-hover:visible top-full mt-1 left-0 overflow-hidden rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-950 shadow-md dark:border-slate-800 dark:bg-slate-950 dark:text-slate-50">
+                    <p>This item has some uncertainty in the data</p>
+                  </div>
+                </div>
+              )}
+            </div>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-6 w-6 p-0 rounded-full"
+              onClick={(e) => {
+                e.stopPropagation();
+                setEditingItem(item);
+              }}
+            >
+              <Pencil className="h-3.5 w-3.5 text-slate-500" />
+              <span className="sr-only">Edit item</span>
+            </Button>
           </div>
 
           <div className="text-slate-700 dark:text-slate-300 mt-1">
@@ -328,6 +372,34 @@ export function PDFDataList({
     );
   };
 
+  // Handle updating an order item
+  const handleUpdateItem = (updatedItem: Order) => {
+    const updateItemInTree = (items: OrderItem[]): OrderItem[] => {
+      return items.map(item => {
+        if (isOrder(item)) {
+          if (editingItem && item.sku === editingItem.sku && item.name === editingItem.name) {
+            // This is the item we want to update
+            return { ...item, ...updatedItem };
+          }
+          return item;
+        } else if (item.content) {
+          // Recursively update items in the category
+          return {
+            ...item,
+            content: updateItemInTree(item.content),
+          };
+        }
+        return item;
+      });
+    };
+    
+    // Update the parsed data
+    setParsedData(prev => updateItemInTree(prev));
+    
+    // Regenerate summary
+    generateSummary(parsedData);
+  };
+
   // Render the summary of required Artikel
   const renderSummary = () => {
     if (Object.keys(summary).length === 0) {
@@ -348,78 +420,61 @@ export function PDFDataList({
       "670": "Stahltüren, Stahlzargen, Rohrrahmentüren",
       "660": "Haustüren",
       "610": "Glastüren",
-      "680": "Tore",
-      "240": "Beschläge",
-      "330": "Türstopper",
-      "450": "Lüftungsgitter",
-      "290": "Türschließer",
-      "360": "Schlösser / E-Öffner",
-      DL8: "Wartung",
-      DL5: "Arbeiten",
+      // Add more categories as needed
     };
 
-    // Initialize categories
-    Object.values(skuCategories).forEach((name) => {
-      groupedItems[name] = { name, items: [] };
-    });
+    // Group items by SKU category
+    Object.entries(summary).forEach(([sku, { count, item }]) => {
+      // Determine the category based on SKU prefix
+      const prefix = sku.substring(0, 3); // Adjust as needed for your SKU format
+      const categoryName = skuCategories[prefix] || "Other";
 
-    // Group items by SKU prefix
-    Object.entries(summary).forEach(([sku, data]) => {
-      let assignedCategory = false;
-
-      // Find matching category based on SKU prefix
-      Object.entries(skuCategories).forEach(([prefix, categoryName]) => {
-        if (sku.startsWith(prefix)) {
-          groupedItems[categoryName].items.push({
-            sku,
-            name: data.item,
-            count: data.count,
-          });
-          assignedCategory = true;
-        }
-      });
-
-      // If no category matches, add to "Other"
-      if (!assignedCategory) {
-        if (!groupedItems["Other"]) {
-          groupedItems["Other"] = { name: "Other", items: [] };
-        }
-        groupedItems["Other"].items.push({
-          sku,
-          name: data.item,
-          count: data.count,
-        });
+      // Initialize the category if it doesn't exist
+      if (!groupedItems[categoryName]) {
+        groupedItems[categoryName] = {
+          name: categoryName,
+          items: [],
+        };
       }
+
+      // Add the item to the category
+      groupedItems[categoryName].items.push({
+        sku,
+        name: item,
+        count,
+      });
     });
 
-    // Filter out empty categories and sort items within each category
-    const filteredGroups = Object.values(groupedItems).filter(
-      (group) => group.items.length > 0,
+    // Sort entries by category name
+    const sortedGroups = Object.values(groupedItems).sort((a, b) =>
+      a.name.localeCompare(b.name),
     );
-    filteredGroups.forEach((group) => {
-      group.items.sort((a, b) => a.name.localeCompare(b.name));
-    });
-
-    if (filteredGroups.length === 0) return null;
 
     return (
-      <div className="mt-4 bg-slate-50 dark:bg-slate-800/30 p-3 rounded-md border border-slate-200 dark:border-slate-700">
-        <h3 className="font-medium text-sm mb-2">Required Artikel Summary</h3>
-
+      <div className="border-t border-slate-200 dark:border-slate-800 mt-4 pt-4">
+        <h3 className="text-sm font-medium mb-2">Summary by Category</h3>
         <div className="space-y-3">
-          {filteredGroups.map((group) => (
-            <div key={group.name}>
-              <h4 className="text-xs font-medium text-slate-500">
-                {group.name}
+          {sortedGroups.map((category) => (
+            <div key={category.name} className="mb-3">
+              <h4 className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                {category.name}
               </h4>
-              <ul className="mt-1 text-xs space-y-1 text-slate-800 dark:text-slate-200">
-                {group.items.map((item) => (
-                  <li key={item.sku}>
-                    <strong>{item.count}</strong>{" "}
-                    {item.name || `Items (SKU: ${item.sku})`}
-                  </li>
+              <div className="space-y-1">
+                {category.items.map((item) => (
+                  <div
+                    key={item.sku}
+                    className="flex justify-between text-xs pb-1"
+                  >
+                    <div className="flex-grow">
+                      <span className="text-slate-500 mr-1">{item.sku}:</span>
+                      {item.name}
+                    </div>
+                    <div className="text-right">
+                      {item.count} {item.count === 1 ? "pc" : "pcs"}
+                    </div>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
           ))}
         </div>
@@ -428,137 +483,105 @@ export function PDFDataList({
   };
 
   return (
-    <div className="w-full h-full">
-      {(data || isLoading) && (
-        <Card className="w-full h-full border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-900/30 overflow-hidden">
-          <div className="flex border-b border-slate-200 dark:border-slate-700">
-            <button
-              onClick={() => setActiveTab("data")}
-              className={`px-4 py-2 text-sm font-medium ${
-                activeTab === "data"
-                  ? "bg-slate-100 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400"
-                  : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
-              }`}
-            >
-              Order Data
-            </button>
-            {rawMarkdown && (
-              <button
-                onClick={() => setActiveTab("debug")}
-                className={`px-4 py-2 text-sm font-medium ${
-                  activeTab === "debug"
-                    ? "bg-slate-100 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400"
-                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
-                }`}
-              >
-                Raw JSON
-              </button>
-            )}
-          </div>
-          <CardContent className="p-0 h-full">
-            <div>
-              <div>
-                {activeTab === "data" && (
-                  <div
-                    className="p-3 sm:p-6 pb-4 sm:pb-8 h-[calc(100%-40px)] scrollable"
-                    style={{
-                      ...scrollableContainerStyle(maxHeight),
-                      ...(preventTruncation ? ensureNoTruncation() : {}),
-                    }}
-                  >
-                    {isLoading && parsedData.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center py-6 sm:py-12">
-                        <div className="animate-pulse flex flex-col items-center space-y-3 sm:space-y-4 w-full">
-                          <div className="h-3 sm:h-4 bg-slate-200 dark:bg-slate-700 rounded w-3/4"></div>
-                          <div className="h-3 sm:h-4 bg-slate-200 dark:bg-slate-700 rounded w-4/5"></div>
-                          <div className="h-3 sm:h-4 bg-slate-200 dark:bg-slate-700 rounded w-2/3"></div>
-                        </div>
-                      </div>
-                    ) : jsonError ? (
-                      <div className="p-4 bg-amber-50 dark:bg-slate-800/30 border border-amber-200 dark:border-amber-800/60 rounded-md text-amber-800 dark:text-amber-300">
-                        <h3 className="font-medium mb-2 flex items-center">
-                          <AlertCircle className="h-4 w-4 mr-2" />
-                          Data Format Issue
-                        </h3>
-                        <p className="text-sm">{jsonError}</p>
-                        <p className="text-sm mt-2">
-                          Waiting for structured data to be extracted from the
-                          document...
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="prose prose-slate dark:prose-invert max-w-none h-full">
-                        {/* Controls for expand/collapse */}
-                        {parsedData.length > 0 && (
-                          <div className="flex justify-end space-x-2 mb-3">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={expandAll}
-                              className="text-xs h-7 px-2 py-0 bg-white dark:bg-transparent"
-                            >
-                              Expand All
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={collapseAll}
-                              className="text-xs h-7 px-2 py-0 bg-white dark:bg-transparent"
-                            >
-                              Collapse All
-                            </Button>
-                          </div>
-                        )}
+    <div className="w-full h-full flex flex-col">
+      <div className="flex items-center mb-4 space-x-2">
+        <Button
+          variant={activeTab === "data" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setActiveTab("data")}
+          className="text-xs px-3"
+        >
+          Extracted Data
+        </Button>
+        <Button
+          variant={activeTab === "debug" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setActiveTab("debug")}
+          className="text-xs px-3"
+        >
+          Debug View
+        </Button>
+      </div>
 
-                        {/* Summary section */}
-                        {renderSummary()}
+      <Card className="flex-grow overflow-hidden">
+        <CardContent className="p-0 h-full">
+          {isLoading ? (
+                <div className="p-4 animate-pulse">
+                  <div className="h-4 w-3/4 bg-slate-200 dark:bg-slate-700 rounded mb-2"></div>
+                  <div className="h-4 w-1/2 bg-slate-200 dark:bg-slate-700 rounded mb-2"></div>
+                  <div className="h-4 w-2/3 bg-slate-200 dark:bg-slate-700 rounded"></div>
+                </div>
+              ) : error || jsonError ? (
+                <div className="p-4 text-red-600 dark:text-red-400">
+                  {error || jsonError}
+                </div>
+              ) : activeTab === "debug" ? (
+                <div className="max-h-[70vh] overflow-y-auto overflow-x-hidden">
+                  <pre className="p-4 overflow-x-auto text-xs">
+                    {jsonData}
+                  </pre>
+                </div>
+              ) : (
+                <div className="max-h-[70vh] overflow-y-auto overflow-x-hidden">
+              {/* Control buttons */}
+              <div className="p-2 flex justify-end space-x-2 sticky top-0 z-10 bg-white dark:bg-slate-950 shadow-sm">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={expandAll}
+                  className="text-xs h-7"
+                >
+                  Expand All
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={collapseAll}
+                  className="text-xs h-7"
+                >
+                  Collapse All
+                </Button>
+              </div>
 
-                        {/* Main content display */}
-                        <div className="mt-4 space-y-3">
-                          {parsedData.length > 0 ? (
-                            parsedData.map((item, index) => (
-                              <React.Fragment key={`root-${index}`}>
-                                {isOrder(item)
-                                  ? renderOrderItem(item)
-                                  : renderCategory(item, "", 0)}
-                              </React.Fragment>
-                            ))
-                          ) : (
-                            <p className="text-center text-slate-500 dark:text-slate-400 py-8">
-                              No data available
-                            </p>
-                          )}
-                        </div>
-
-                        {isLoading && parsedData.length > 0 && (
-                          <div className="text-center mt-4 text-sm text-slate-500">
-                            Processing... this may take a while for large
-                            documents
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-                {activeTab === "debug" && (
-                  <div className="p-3 sm:p-6 h-[calc(100%-40px)]">
-                    <div
-                      className="bg-slate-50 dark:bg-slate-900 p-4 rounded-md border border-slate-200 dark:border-slate-700"
-                      style={{
-                        ...scrollableContainerStyle(maxHeight),
-                        ...(preventTruncation ? ensureNoTruncation() : {}),
-                      }}
-                    >
-                      <pre className="text-xs whitespace-pre-wrap overflow-auto no-truncate">
-                        {data}
-                      </pre>
+              {/* Data content */}
+              <div className="p-4">
+                {parsedData.length > 0 ? (
+                  <>
+                    <div className="mb-6">
+                      {parsedData.map((item, index) => (
+                        <React.Fragment key={`root-${index}`}>
+                          {isOrder(item)
+                            ? renderOrderItem(item)
+                            : renderCategory(item, "", 0)}
+                        </React.Fragment>
+                      ))}
                     </div>
+
+                    {/* Summary section */}
+                    {renderSummary()}
+                  </>
+                ) : (
+                  <div className="text-slate-500 dark:text-slate-400">
+                    No data available to display.
                   </div>
                 )}
               </div>
             </div>
-          </CardContent>
-        </Card>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Edit Dialog */}
+      {editingItem && (
+        <OrderItemDialog
+          isOpen={Boolean(editingItem)}
+          onClose={() => setEditingItem(null)}
+          onSave={(updatedItem) => {
+            handleUpdateItem(updatedItem);
+            setEditingItem(null);
+          }}
+          item={editingItem}
+        />
       )}
     </div>
   );

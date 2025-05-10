@@ -39,8 +39,8 @@ export const OPENROUTER_MODELS: OpenRouterModel[] = [
 export const OPENROUTER_API_URL =
   "https://openrouter.ai/api/v1/chat/completions";
 
-export const DEFAULT_MODEL = "anthropic/claude-3.7-sonnet";
-// export const DEFAULT_MODEL = "google/gemini-2.5-flash-preview";
+// export const DEFAULT_MODEL = "anthropic/claude-3.7-sonnet";
+export const DEFAULT_MODEL = "google/gemini-2.5-flash-preview";
 // export const DEFAULT_MODEL = "google/gemini-2.5-pro-preview";
 
 export function getApiHeaders(apiKey: string) {
