@@ -157,9 +157,9 @@ export function PdfUpload({
 
   return (
     <div className="w-full">
-      <Card className="w-full border-blue-200 dark:border-blue-800 bg-white/70 dark:bg-blue-950/30">
+      <Card className="w-full border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-900/30">
         <CardHeader>
-          <CardTitle className="text-xl text-blue-800 dark:text-blue-300">
+          <CardTitle className="text-xl text-slate-800 dark:text-slate-300">
             Process Documents
           </CardTitle>
           <CardDescription>
@@ -170,8 +170,8 @@ export function PdfUpload({
           <div
             className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
               isDragging
-                ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
-                : "border-blue-200 dark:border-blue-800 hover:border-blue-300 dark:hover:border-blue-700"
+                ? "border-indigo-500 bg-slate-50 dark:bg-slate-800/20"
+                : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
             }`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -189,7 +189,7 @@ export function PdfUpload({
             <div className="flex flex-col items-center justify-center gap-3">
               {selectedFile ? (
                 <>
-                  <FileText className="h-12 w-12 text-blue-600 dark:text-blue-400" />
+                  <FileText className="h-12 w-12 text-indigo-600 dark:text-indigo-400" />
                   <div>
                     <p className="text-sm font-medium">{selectedFile.name}</p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -199,7 +199,7 @@ export function PdfUpload({
                 </>
               ) : (
                 <>
-                  <Upload className="h-12 w-12 text-blue-600 dark:text-blue-400" />
+                  <Upload className="h-12 w-12 text-indigo-600 dark:text-indigo-400" />
                   <div>
                     <p className="font-medium">
                       Drop your PDF here or click to browse
@@ -226,7 +226,7 @@ export function PdfUpload({
                 <Button
                   type="button"
                   variant="outline"
-                  className="mr-2 border-blue-200 dark:border-blue-800"
+                  className="mr-2 border-slate-200 dark:border-slate-700"
                   onClick={resetState}
                   disabled={isUploading}
                 >
@@ -234,7 +234,7 @@ export function PdfUpload({
                 </Button>
                 <Button
                   type="button"
-                  className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800"
+                  className="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-800"
                   onClick={uploadPdf}
                   disabled={isUploading}
                 >

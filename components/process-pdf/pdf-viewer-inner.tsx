@@ -54,11 +54,11 @@ export default function PDFViewerInner({ file, url }: PDFViewerInnerProps) {
     <div className="flex flex-col items-center w-full h-full max-w-full">
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-black/20 backdrop-blur-sm z-10">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600 dark:text-blue-400" />
+          <Loader2 className="h-8 w-8 animate-spin text-indigo-600 dark:text-indigo-400" />
         </div>
       )}
 
-      <div className="w-full rounded-lg border border-blue-100 dark:border-blue-900 bg-white dark:bg-gray-900 overflow-hidden relative h-[400px] sm:h-[500px] lg:h-[600px]">
+      <div className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-gray-900 overflow-hidden relative h-[400px] sm:h-[500px] lg:h-[600px]">
         {error ? (
           <div className="flex flex-col items-center justify-center h-full p-4 sm:p-8 text-red-500">
             <AlertCircle className="h-8 w-8 sm:h-12 sm:w-12 mb-2 sm:mb-4" />
@@ -80,7 +80,7 @@ export default function PDFViewerInner({ file, url }: PDFViewerInnerProps) {
               />
               <p className="text-center p-4 text-sm sm:text-base">
                 Your browser doesn&apos;t support embedded PDFs. 
-                <a href={objectUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline ml-2">
+                <a href={objectUrl} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline ml-2">
                   Click here to download the PDF
                 </a>.
               </p>

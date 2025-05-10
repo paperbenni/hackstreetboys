@@ -12,7 +12,7 @@ const PDFViewerInner = dynamic(
     ssr: false,
     loading: () => (
       <div className="flex justify-center items-center py-16">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600 dark:text-blue-400" />
+        <Loader2 className="h-8 w-8 animate-spin text-indigo-600 dark:text-indigo-400" />
       </div>
     )
   }
@@ -31,7 +31,7 @@ export function PdfViewer({ file, url }: PdfViewerProps) {
 
   return (
     <div className="w-full h-full">
-      <Card className="w-full h-full border-blue-200 dark:border-blue-800 bg-white/70 dark:bg-blue-950/30">
+      <Card className="w-full h-full border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-900/30">
         <CardContent className="p-4 h-full">
           <PDFViewerInner file={file} url={url} />
         </CardContent>

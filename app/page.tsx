@@ -36,8 +36,8 @@ export default function ProcessDocumentPage() {
   };
 
   return (
-    <div className="grid grid-rows-[1fr_20px] items-start justify-items-center min-h-[calc(100vh-64px)] p-4 pb-20 gap-8 sm:p-8 font-[family-name:var(--font-geist-sans)] bg-gradient-to-b from-blue-100 to-blue-200 dark:from-blue-950 dark:to-blue-900 overflow-y-auto">
-      <main className="flex flex-col gap-[24px] row-start-1 items-center w-full max-w-7xl bg-white/50 dark:bg-black/20 p-4 md:p-6 rounded-xl shadow-lg backdrop-blur-sm border border-blue-200 dark:border-blue-800">
+    <div className="grid grid-rows-[1fr_20px] items-start justify-items-center min-h-[calc(100vh-64px)] p-4 pb-20 gap-8 sm:p-8 font-[family-name:var(--font-geist-sans)] bg-gradient-to-b from-slate-100 to-slate-200 dark:from-slate-900 dark:to-slate-800 overflow-y-auto">
+      <main className="flex flex-col gap-[24px] row-start-1 items-center w-full max-w-7xl bg-white/50 dark:bg-black/20 p-4 md:p-6 rounded-xl shadow-lg backdrop-blur-sm border border-slate-200 dark:border-slate-700">
         <ApiKeyWarning />
 
         <div className="w-full">
@@ -54,7 +54,7 @@ export default function ProcessDocumentPage() {
               <div
                 className={`w-full ${summary || isLoading ? "lg:w-1/2" : "lg:w-full"}`}
               >
-                <h2 className="text-lg font-medium text-blue-800 dark:text-blue-300 mb-2 lg:mb-4">
+                <h2 className="text-lg font-medium text-slate-800 dark:text-slate-300 mb-2 lg:mb-4">
                   Document View
                 </h2>
                 <PdfViewer file={selectedFile} />
@@ -66,7 +66,7 @@ export default function ProcessDocumentPage() {
                 className={`w-full ${selectedFile ? "lg:w-1/2" : "lg:w-full"} mt-4 lg:mt-0`}
               >
                 <div className="flex items-center justify-between mb-2 lg:mb-4">
-                  <h2 className="text-lg font-medium text-blue-800 dark:text-blue-300">
+                  <h2 className="text-lg font-medium text-slate-800 dark:text-slate-300">
                     Items
                   </h2>
                   {summary && !isLoading && (
@@ -74,7 +74,7 @@ export default function ProcessDocumentPage() {
                       variant="outline"
                       size="sm"
                       onClick={handleNewSummary}
-                      className="flex items-center gap-1 text-sm border-blue-200 dark:border-blue-800"
+                      className="flex items-center gap-1 text-sm border-slate-200 dark:border-slate-700"
                     >
                       <RefreshCcw className="h-3.5 w-3.5" /> Restart
                     </Button>

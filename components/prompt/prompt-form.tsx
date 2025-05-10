@@ -96,7 +96,7 @@ export function PromptForm({ onResponseAction, onSubmitAction }: PromptFormProps
                   <FormLabel>AI Model</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
-                      <SelectTrigger className="bg-blue-50 dark:bg-blue-950/50 border-blue-200 dark:border-blue-800">
+                      <SelectTrigger className="bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700">
                         <SelectValue placeholder="Select a model" />
                       </SelectTrigger>
                     </FormControl>
@@ -132,7 +132,7 @@ export function PromptForm({ onResponseAction, onSubmitAction }: PromptFormProps
                 <FormControl>
                   <div className="flex flex-col">
                     <textarea 
-                      className="w-full min-h-[120px] rounded-md border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/50 px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400"
+                      className="w-full min-h-[120px] rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:focus-visible:ring-indigo-400"
                       placeholder="Enter your prompt here..." 
                       disabled={isLoading}
                       {...field} 
