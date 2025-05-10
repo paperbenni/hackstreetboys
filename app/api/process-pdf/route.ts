@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { parse } from "best-effort-json-parser";
 import {
   OPENROUTER_API_URL,
   getApiHeaders,

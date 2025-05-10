@@ -1,10 +1,21 @@
 "use client";
+import { parse } from "best-effort-json-parser";
 
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { ChevronRight, ChevronDown, Package, Folder, AlertCircle } from "lucide-react";
+import {
+  ChevronRight,
+  ChevronDown,
+  Package,
+  Folder,
+  AlertCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { scrollableContainerStyle, ensureNoTruncation, extractJsonFromMarkdown } from "@/lib/utils";
+import {
+  scrollableContainerStyle,
+  ensureNoTruncation,
+  extractJsonFromMarkdown,
+} from "@/lib/utils";
 
 // Define interfaces as specified in the schema
 interface Order {
@@ -31,7 +42,7 @@ type OrderItem = Order | OrderCategory;
 
 // Helper function to check if an item is an Order or OrderCategory
 function isOrder(item: OrderItem): item is Order {
-  return 'sku' in item;
+  return "sku" in item;
 }
 
 interface PDFDataListProps {
@@ -49,32 +60,36 @@ export function PDFDataList({
   maxHeight = "70vh",
   preventTruncation = true,
 }: PDFDataListProps) {
-  const [activeTab, setActiveTab] = useState<'data' | 'debug'>('data');
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const [activeTab, setActiveTab] = useState<"data" | "debug">("data");
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
+    new Set(),
+  );
   const [parsedData, setParsedData] = useState<OrderItem[]>([]);
-  const [summary, setSummary] = useState<{[key: string]: {count: number, item: string}}>({});
+  const [summary, setSummary] = useState<{
+    [key: string]: { count: number; item: string };
+  }>({});
   const [jsonError, setJsonError] = useState<string | null>(null);
-  
+
   // Extract and parse JSON data from the response
   useEffect(() => {
     if (!data) return;
     try {
       // Try to extract JSON from the input data
       const jsonString = extractJsonFromMarkdown(data);
-      const parsed = JSON.parse(jsonString);
-      
+      const parsed = parse(jsonString);
+
       if (Array.isArray(parsed)) {
         setParsedData(parsed);
         setJsonError(null);
-        
+
         // Generate summary for required Artikel
         generateSummary(parsed);
-      } else if (typeof parsed === 'object') {
+      } else if (typeof parsed === "object") {
         // Handle case where the data might not be an array but an object with items property
         if (Array.isArray(parsed.items)) {
           setParsedData(parsed.items);
           setJsonError(null);
-          
+
           // Generate summary for required Artikel
           generateSummary(parsed.items);
         } else {
@@ -83,11 +98,13 @@ export function PDFDataList({
           if (itemsArray.length > 0) {
             setParsedData(itemsArray as OrderItem[]);
             setJsonError(null);
-            
+
             // Generate summary for required Artikel
             generateSummary(itemsArray as OrderItem[]);
           } else {
-            setJsonError("Data could not be displayed as it is not in the expected format");
+            setJsonError(
+              "Data could not be displayed as it is not in the expected format",
+            );
           }
         }
       } else {
@@ -95,14 +112,16 @@ export function PDFDataList({
       }
     } catch (error) {
       console.error("Failed to parse JSON data:", error);
-      setJsonError("Failed to parse JSON data. The data may be incomplete or in incorrect format.");
+      setJsonError(
+        "Failed to parse JSON data. The data may be incomplete or in incorrect format.",
+      );
     }
   }, [data]);
-  
+
   // Generate a summary of article quantities for the required Artikel
   const generateSummary = (items: OrderItem[]) => {
-    const summary: {[key: string]: {count: number, item: string}} = {};
-    
+    const summary: { [key: string]: { count: number; item: string } } = {};
+
     const processItem = (item: OrderItem, path: string = "") => {
       if (isOrder(item)) {
         const sku = item.sku;
@@ -110,29 +129,29 @@ export function PDFDataList({
         const itemName = item.name;
         // We don't need to track the path for orders, but we keep the code commented for future use
         // const fullPath = path ? `${path} / ${itemName}` : itemName;
-      
+
         // Create a key based on SKU to track quantities
         if (sku) {
           if (!summary[sku]) {
             summary[sku] = { count: 0, item: itemName };
           }
-          
+
           summary[sku].count += quantity;
         }
-      } else if ('content' in item && Array.isArray(item.content)) {
+      } else if ("content" in item && Array.isArray(item.content)) {
         const categoryName = item.name;
         const newPath = path ? `${path} / ${categoryName}` : categoryName;
-        
+
         // Recursively process all items in the category
-        item.content.forEach(subItem => {
+        item.content.forEach((subItem) => {
           processItem(subItem, newPath);
         });
       }
     };
-    
+
     // Process all top-level items
-    items.forEach(item => processItem(item));
-    
+    items.forEach((item) => processItem(item));
+
     setSummary(summary);
   };
 
@@ -146,47 +165,51 @@ export function PDFDataList({
     }
     setExpandedCategories(newExpanded);
   };
-  
+
   // Expand all categories
   const expandAll = () => {
     const newExpanded = new Set<string>();
-    
+
     const findAllPaths = (items: OrderItem[], path: string = "") => {
       items.forEach((item) => {
         if (!isOrder(item)) {
           const categoryName = item.name;
           const newPath = path ? `${path}-${categoryName}` : categoryName;
           newExpanded.add(newPath);
-          
+
           if (item.content && Array.isArray(item.content)) {
             findAllPaths(item.content, newPath);
           }
         }
       });
     };
-    
+
     findAllPaths(parsedData);
     setExpandedCategories(newExpanded);
   };
-  
+
   // Collapse all categories
   const collapseAll = () => {
     setExpandedCategories(new Set());
   };
 
   // Render a category and its children recursively
-  const renderCategory = (item: OrderCategory, path: string = "", level: number = 0) => {
+  const renderCategory = (
+    item: OrderCategory,
+    path: string = "",
+    level: number = 0,
+  ) => {
     const categoryName = item.name;
     const categoryPath = path ? `${path}-${categoryName}` : categoryName;
     const isExpanded = expandedCategories.has(categoryPath);
-    
+
     return (
       <div key={categoryPath} className="mb-2">
-        <div 
+        <div
           className={`flex items-center p-2 rounded-md cursor-pointer ${
-            level === 0 
-              ? 'bg-slate-100 dark:bg-slate-800' 
-              : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
+            level === 0
+              ? "bg-slate-100 dark:bg-slate-800"
+              : "hover:bg-slate-50 dark:hover:bg-slate-800/50"
           }`}
           onClick={() => toggleCategory(categoryPath)}
         >
@@ -195,23 +218,27 @@ export function PDFDataList({
           ) : (
             <ChevronRight className="h-4 w-4 mr-2 text-slate-500 flex-shrink-0" />
           )}
-          <Folder className={`h-4 w-4 mr-2 ${level === 0 ? 'text-indigo-500' : 'text-slate-500'} flex-shrink-0`} />
-          <span className={`font-medium ${level === 0 ? 'text-base' : 'text-sm'}`}>
+          <Folder
+            className={`h-4 w-4 mr-2 ${level === 0 ? "text-indigo-500" : "text-slate-500"} flex-shrink-0`}
+          />
+          <span
+            className={`font-medium ${level === 0 ? "text-base" : "text-sm"}`}
+          >
             {categoryName}
           </span>
           <span className="ml-2 text-xs text-slate-500">
-            ({item.content.length} {item.content.length === 1 ? 'item' : 'items'})
+            ({item.content.length}{" "}
+            {item.content.length === 1 ? "item" : "items"})
           </span>
         </div>
-        
+
         {isExpanded && (
           <div className="pl-8 mt-1 space-y-1">
             {item.content.map((subItem, index) => (
               <React.Fragment key={`${categoryPath}-${index}`}>
-                {isOrder(subItem) 
+                {isOrder(subItem)
                   ? renderOrderItem(subItem)
-                  : renderCategory(subItem, categoryPath, level + 1)
-                }
+                  : renderCategory(subItem, categoryPath, level + 1)}
               </React.Fragment>
             ))}
           </div>
@@ -219,7 +246,7 @@ export function PDFDataList({
       </div>
     );
   };
-  
+
   // Render a single order item
   const renderOrderItem = (item: Order) => {
     return (
@@ -227,7 +254,7 @@ export function PDFDataList({
         <Package className="h-4 w-4 mr-2 text-slate-500 flex-shrink-0 mt-0.5" />
         <div className="flex-grow">
           <div className="flex items-center">
-            <span className="font-medium">{item.name || 'Unnamed item'}</span>
+            <span className="font-medium">{item.name || "Unnamed item"}</span>
             {item.relevant === false && (
               <div className="ml-2 text-xs px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700">
                 Optional
@@ -242,38 +269,57 @@ export function PDFDataList({
               </div>
             )}
           </div>
-          
+
           <div className="text-slate-700 dark:text-slate-300 mt-1">
-            {item.text && <p className="text-xs mt-1 text-slate-600 dark:text-slate-400">{item.text}</p>}
-            
+            {item.text && (
+              <p className="text-xs mt-1 text-slate-600 dark:text-slate-400">
+                {item.text}
+              </p>
+            )}
+
             <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2">
               {item.sku && (
                 <div className="text-xs">
-                  <span className="text-slate-500 dark:text-slate-400">SKU:</span> {item.sku}
+                  <span className="text-slate-500 dark:text-slate-400">
+                    SKU:
+                  </span>{" "}
+                  {item.sku}
                 </div>
               )}
-              
+
               {item.quantity && (
                 <div className="text-xs">
-                  <span className="text-slate-500 dark:text-slate-400">Quantity:</span> {item.quantity} {item.quantityUnit || ''}
+                  <span className="text-slate-500 dark:text-slate-400">
+                    Quantity:
+                  </span>{" "}
+                  {item.quantity} {item.quantityUnit || ""}
                 </div>
               )}
-              
+
               {item.price && (
                 <div className="text-xs">
-                  <span className="text-slate-500 dark:text-slate-400">Price:</span> {item.price} {item.priceUnit || '€'}
+                  <span className="text-slate-500 dark:text-slate-400">
+                    Price:
+                  </span>{" "}
+                  {item.price} {item.priceUnit || "€"}
                 </div>
               )}
-              
+
               {item.commission && (
                 <div className="text-xs">
-                  <span className="text-slate-500 dark:text-slate-400">Commission:</span> {item.commission}
+                  <span className="text-slate-500 dark:text-slate-400">
+                    Commission:
+                  </span>{" "}
+                  {item.commission}
                 </div>
               )}
-              
+
               {item.purchasePrice && (
                 <div className="text-xs">
-                  <span className="text-slate-500 dark:text-slate-400">Purchase Price:</span> {item.purchasePrice}
+                  <span className="text-slate-500 dark:text-slate-400">
+                    Purchase Price:
+                  </span>{" "}
+                  {item.purchasePrice}
                 </div>
               )}
             </div>
@@ -282,18 +328,23 @@ export function PDFDataList({
       </div>
     );
   };
-  
+
   // Render the summary of required Artikel
   const renderSummary = () => {
     if (Object.keys(summary).length === 0) {
       return null;
     }
-    
+
     // Group items by SKU category
-    const groupedItems: {[key: string]: {name: string, items: {sku: string, name: string, count: number}[]}} = {};
-    
+    const groupedItems: {
+      [key: string]: {
+        name: string;
+        items: { sku: string; name: string; count: number }[];
+      };
+    } = {};
+
     // Define SKU categories
-    const skuCategories: {[prefix: string]: string} = {
+    const skuCategories: { [prefix: string]: string } = {
       "620": "Holztüren, Holzzargen",
       "670": "Stahltüren, Stahlzargen, Rohrrahmentüren",
       "660": "Haustüren",
@@ -304,31 +355,31 @@ export function PDFDataList({
       "450": "Lüftungsgitter",
       "290": "Türschließer",
       "360": "Schlösser / E-Öffner",
-      "DL8": "Wartung",
-      "DL5": "Arbeiten",
+      DL8: "Wartung",
+      DL5: "Arbeiten",
     };
-    
+
     // Initialize categories
-    Object.values(skuCategories).forEach(name => {
+    Object.values(skuCategories).forEach((name) => {
       groupedItems[name] = { name, items: [] };
     });
-    
+
     // Group items by SKU prefix
     Object.entries(summary).forEach(([sku, data]) => {
       let assignedCategory = false;
-      
+
       // Find matching category based on SKU prefix
       Object.entries(skuCategories).forEach(([prefix, categoryName]) => {
         if (sku.startsWith(prefix)) {
           groupedItems[categoryName].items.push({
             sku,
             name: data.item,
-            count: data.count
+            count: data.count,
           });
           assignedCategory = true;
         }
       });
-      
+
       // If no category matches, add to "Other"
       if (!assignedCategory) {
         if (!groupedItems["Other"]) {
@@ -337,31 +388,36 @@ export function PDFDataList({
         groupedItems["Other"].items.push({
           sku,
           name: data.item,
-          count: data.count
+          count: data.count,
         });
       }
     });
-    
+
     // Filter out empty categories and sort items within each category
-    const filteredGroups = Object.values(groupedItems).filter(group => group.items.length > 0);
-    filteredGroups.forEach(group => {
+    const filteredGroups = Object.values(groupedItems).filter(
+      (group) => group.items.length > 0,
+    );
+    filteredGroups.forEach((group) => {
       group.items.sort((a, b) => a.name.localeCompare(b.name));
     });
-    
+
     if (filteredGroups.length === 0) return null;
-    
+
     return (
       <div className="mt-4 bg-slate-50 dark:bg-slate-800/30 p-3 rounded-md border border-slate-200 dark:border-slate-700">
         <h3 className="font-medium text-sm mb-2">Required Artikel Summary</h3>
-        
+
         <div className="space-y-3">
           {filteredGroups.map((group) => (
             <div key={group.name}>
-              <h4 className="text-xs font-medium text-slate-500">{group.name}</h4>
+              <h4 className="text-xs font-medium text-slate-500">
+                {group.name}
+              </h4>
               <ul className="mt-1 text-xs space-y-1 text-slate-800 dark:text-slate-200">
-                {group.items.map(item => (
+                {group.items.map((item) => (
                   <li key={item.sku}>
-                    <strong>{item.count}</strong> {item.name || `Items (SKU: ${item.sku})`}
+                    <strong>{item.count}</strong>{" "}
+                    {item.name || `Items (SKU: ${item.sku})`}
                   </li>
                 ))}
               </ul>
@@ -371,29 +427,29 @@ export function PDFDataList({
       </div>
     );
   };
-  
+
   return (
     <div className="w-full h-full">
       {(data || isLoading) && (
         <Card className="w-full h-full border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-900/30 overflow-hidden">
           <div className="flex border-b border-slate-200 dark:border-slate-700">
             <button
-              onClick={() => setActiveTab('data')}
+              onClick={() => setActiveTab("data")}
               className={`px-4 py-2 text-sm font-medium ${
-                activeTab === 'data'
-                  ? 'bg-slate-100 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400'
-                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                activeTab === "data"
+                  ? "bg-slate-100 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400"
+                  : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
               }`}
             >
               Order Data
             </button>
             {rawMarkdown && (
               <button
-                onClick={() => setActiveTab('debug')}
+                onClick={() => setActiveTab("debug")}
                 className={`px-4 py-2 text-sm font-medium ${
-                  activeTab === 'debug'
-                    ? 'bg-slate-100 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400'
-                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                  activeTab === "debug"
+                    ? "bg-slate-100 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400"
+                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
                 }`}
               >
                 Raw JSON
@@ -403,12 +459,12 @@ export function PDFDataList({
           <CardContent className="p-0 h-full">
             <div>
               <div>
-                {activeTab === 'data' && (
-                  <div 
-                    className="p-3 sm:p-6 pb-4 sm:pb-8 h-[calc(100%-40px)] scrollable" 
+                {activeTab === "data" && (
+                  <div
+                    className="p-3 sm:p-6 pb-4 sm:pb-8 h-[calc(100%-40px)] scrollable"
                     style={{
                       ...scrollableContainerStyle(maxHeight),
-                      ...(preventTruncation ? ensureNoTruncation() : {})
+                      ...(preventTruncation ? ensureNoTruncation() : {}),
                     }}
                   >
                     {isLoading && parsedData.length === 0 ? (
@@ -427,7 +483,8 @@ export function PDFDataList({
                         </h3>
                         <p className="text-sm">{jsonError}</p>
                         <p className="text-sm mt-2">
-                          Waiting for structured data to be extracted from the document...
+                          Waiting for structured data to be extracted from the
+                          document...
                         </p>
                       </div>
                     ) : (
@@ -453,19 +510,18 @@ export function PDFDataList({
                             </Button>
                           </div>
                         )}
-                        
+
                         {/* Summary section */}
                         {renderSummary()}
-                        
+
                         {/* Main content display */}
                         <div className="mt-4 space-y-3">
                           {parsedData.length > 0 ? (
                             parsedData.map((item, index) => (
                               <React.Fragment key={`root-${index}`}>
-                                {isOrder(item) 
+                                {isOrder(item)
                                   ? renderOrderItem(item)
-                                  : renderCategory(item, '', 0)
-                                }
+                                  : renderCategory(item, "", 0)}
                               </React.Fragment>
                             ))
                           ) : (
@@ -474,26 +530,29 @@ export function PDFDataList({
                             </p>
                           )}
                         </div>
-                        
+
                         {isLoading && parsedData.length > 0 && (
                           <div className="text-center mt-4 text-sm text-slate-500">
-                            Processing... this may take a while for large documents
+                            Processing... this may take a while for large
+                            documents
                           </div>
                         )}
                       </div>
                     )}
                   </div>
                 )}
-                {activeTab === 'debug' && (
+                {activeTab === "debug" && (
                   <div className="p-3 sm:p-6 h-[calc(100%-40px)]">
-                    <div 
-                      className="bg-slate-50 dark:bg-slate-900 p-4 rounded-md border border-slate-200 dark:border-slate-700" 
+                    <div
+                      className="bg-slate-50 dark:bg-slate-900 p-4 rounded-md border border-slate-200 dark:border-slate-700"
                       style={{
                         ...scrollableContainerStyle(maxHeight),
-                        ...(preventTruncation ? ensureNoTruncation() : {})
+                        ...(preventTruncation ? ensureNoTruncation() : {}),
                       }}
                     >
-                      <pre className="text-xs whitespace-pre-wrap overflow-auto no-truncate">{data}</pre>
+                      <pre className="text-xs whitespace-pre-wrap overflow-auto no-truncate">
+                        {data}
+                      </pre>
                     </div>
                   </div>
                 )}
