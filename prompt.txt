@@ -7,6 +7,7 @@ specified format. Ignore anything not related to the orders.
 
 #SPECEND
 
+Read the @Hackathon Challenge Guidelines.md and annotate and parse the PDF that identifies the key items listed in the @Hackathon Challenge Guidelines.md and collects them together in a JSON file. The JSON schema should be formatted by taking the output.xml code snippet reference. The "text" sections may be longer at initial commissions (such as 1.1.10), but do this without copying the example output.xml in the @Hackathon Challenge Guidelines, such that the "text" section should be copy and pasted directly from the PDF unlike the summarized version as in output.xml. Also, remove the colons at the end of parsed text, before the break command. Leave the initial customerId blank as it will be entered manually. 
 
 
 
