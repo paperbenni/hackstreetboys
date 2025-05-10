@@ -4,15 +4,14 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { OrderItemCategory } from "./order-item-category";
 import { Button } from "@/components/ui/button";
-import {
-  extractJsonFromMarkdown,
-} from "@/lib/utils";
+import { extractJsonFromMarkdown } from "@/lib/utils";
 import { Download } from "lucide-react";
 import { OrderItemDialog } from "./order-item-dialog";
 import { OrderItemDisplay } from "./order-item-display";
 import DebugTab from "@/components/DebugTab";
 import { Order, OrderCategory, OrderItemUnion, isOrder } from "./types";
 import { OrderSummary } from "./order-summary";
+import { parse } from "js2xmlparser";
 
 interface PDFDataListProps {
   data: string;
@@ -40,6 +39,7 @@ export function PDFDataList({
   }>({});
   const [jsonError, setJsonError] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<Order | null>(null);
+  const [copyStatus, setCopyStatus] = useState<string | null>(null);
 
   // No need to reset tab now, since we always show debug tab when there's data
   useEffect(() => {
@@ -84,8 +84,8 @@ export function PDFDataList({
         // Handle if there's a different structure entirely
         else {
           // Try to extract any array found in the JSON
-          const arrays = Object.values(parsedJson).filter(
-            (value) => Array.isArray(value),
+          const arrays = Object.values(parsedJson).filter((value) =>
+            Array.isArray(value),
           );
           if (arrays.length > 0) {
             // Use the first array found
@@ -210,20 +210,19 @@ export function PDFDataList({
 
   // Render a single order item
   const renderOrderItem = (item: Order) => {
-    return (
-      <OrderItemDisplay 
-        item={item} 
-        onEdit={setEditingItem} 
-      />
-    );
+    return <OrderItemDisplay item={item} onEdit={setEditingItem} />;
   };
 
   // Handle updating an order item
   const handleUpdateItem = (updatedItem: Order) => {
     const updateItemInTree = (items: OrderItemUnion[]): OrderItemUnion[] => {
-      return items.map(item => {
+      return items.map((item) => {
         if (isOrder(item)) {
-          if (editingItem && item.sku === editingItem.sku && item.name === editingItem.name) {
+          if (
+            editingItem &&
+            item.sku === editingItem.sku &&
+            item.name === editingItem.name
+          ) {
             // This is the item we want to update
             return { ...item, ...updatedItem };
           }
@@ -238,10 +237,10 @@ export function PDFDataList({
         return item;
       });
     };
-    
+
     // Update the parsed data
-    setParsedData(prev => updateItemInTree(prev));
-    
+    setParsedData((prev) => updateItemInTree(prev));
+
     // Regenerate summary
     generateSummary(parsedData);
   };
@@ -250,10 +249,38 @@ export function PDFDataList({
   const renderSummary = () => {
     return <OrderSummary summary={summary} title="Order Items Summary" />;
   };
-  
+
   // Handle export functionality
   const handleExport = () => {
-    console.log("Hello World! Export functionality will be implemented here.");
+    // Flatten the parsed data to get only Order items
+    const flattenOrderItems = (items: OrderItemUnion[]): Order[] => {
+      return items.reduce<Order[]>((acc, item) => {
+        if (isOrder(item)) {
+          acc.push(item);
+        } else if (item.content) {
+          // Recursively flatten items in categories
+          acc.push(...flattenOrderItems(item.content));
+        }
+        return acc;
+      }, []);
+    };
+
+    // Get flat array of orders
+    const flatOrders = flattenOrderItems(parsedData);
+    
+    // Parse the data and copy to clipboard
+    const xmlString = parse("order", flatOrders);
+    navigator.clipboard.writeText(xmlString)
+      .then(() => {
+        console.log("Copied to clipboard!");
+        setCopyStatus("Copied to clipboard!");
+        setTimeout(() => setCopyStatus(null), 2000);
+      })
+      .catch((err) => {
+        console.error("Failed to copy: ", err);
+        setCopyStatus("Failed to copy!");
+        setTimeout(() => setCopyStatus(null), 2000);
+      });
   };
 
   return (
@@ -282,36 +309,43 @@ export function PDFDataList({
       <Card className="flex-grow overflow-hidden">
         <CardContent className="p-0 h-full">
           {isLoading ? (
-                <div className="p-4 animate-pulse">
-                  <div className="h-4 w-3/4 bg-slate-200 dark:bg-slate-700 rounded mb-2"></div>
-                  <div className="h-4 w-1/2 bg-slate-200 dark:bg-slate-700 rounded mb-2"></div>
-                  <div className="h-4 w-2/3 bg-slate-200 dark:bg-slate-700 rounded"></div>
-                </div>
-              ) : error || jsonError ? (
-                <div className="p-4 text-red-600 dark:text-red-400">
-                  {error || jsonError}
-                </div>
-              ) : activeTab === "debug" ? (
-                <div className="p-4">
-                  <DebugTab 
-                    markdown={rawMarkdown || data} 
-                    maxHeight={maxHeight}
-                    preventTruncation={true}
-                  />
-                </div>
-              ) : (
-                <div className="max-h-[70vh] overflow-y-auto overflow-x-hidden">
+            <div className="p-4 animate-pulse">
+              <div className="h-4 w-3/4 bg-slate-200 dark:bg-slate-700 rounded mb-2"></div>
+              <div className="h-4 w-1/2 bg-slate-200 dark:bg-slate-700 rounded mb-2"></div>
+              <div className="h-4 w-2/3 bg-slate-200 dark:bg-slate-700 rounded"></div>
+            </div>
+          ) : error || jsonError ? (
+            <div className="p-4 text-red-600 dark:text-red-400">
+              {error || jsonError}
+            </div>
+          ) : activeTab === "debug" ? (
+            <div className="p-4">
+              <DebugTab
+                markdown={rawMarkdown || data}
+                maxHeight={maxHeight}
+                preventTruncation={true}
+              />
+            </div>
+          ) : (
+            <div className="max-h-[70vh] overflow-y-auto overflow-x-hidden">
               {/* Control buttons */}
               <div className="p-2 flex justify-between sticky top-0 z-10 bg-white dark:bg-slate-950 shadow-sm">
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={handleExport}
-                  className="text-xs h-7 flex items-center gap-1"
-                >
-                  <Download className="h-3.5 w-3.5" />
-                  Export
-                </Button>
+                <div className="flex items-center">
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={handleExport}
+                    className="text-xs h-7 flex items-center gap-1"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    Export
+                  </Button>
+                  {copyStatus && (
+                    <span className="ml-2 text-xs text-green-600 dark:text-green-400 animate-fade-in">
+                      {copyStatus}
+                    </span>
+                  )}
+                </div>
                 <div className="flex space-x-2">
                   <Button
                     variant="outline"
