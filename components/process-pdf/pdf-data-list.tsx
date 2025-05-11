@@ -13,6 +13,7 @@ import { Order, OrderCategory, OrderItemUnion, isOrder } from "./types";
 import { OrderSummary } from "./order-summary";
 import { parse } from "js2xmlparser";
 import { ExportConfig, ExportConfigForm } from "./export-config";
+import { useHover } from './hover-context';
 
 interface PDFDataListProps {
   data: string;
@@ -41,6 +42,7 @@ export function PDFDataList({
   const [jsonError, setJsonError] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<Order | null>(null);
   const [copyStatus, setCopyStatus] = useState<string | null>(null);
+  const { setHoveredCommission } = useHover();
 
   // No need to reset tab now, since we always show debug tab when there's data
   useEffect(() => {
@@ -96,7 +98,7 @@ export function PDFDataList({
             itemsArray = [parsedJson as OrderItemUnion];
           }
         }
-
+        console.log("itemsArray", itemsArray);
         // Update state with parsed data
         if (itemsArray.length > 0) {
           setParsedData(itemsArray as OrderItemUnion[]);
@@ -212,7 +214,12 @@ export function PDFDataList({
   // Render a single order item
   const renderOrderItem = (item: Order, level: number = 0) => {
     return (
-      <OrderItemDisplay item={item} onEdit={setEditingItem} level={level} />
+      <div
+        onMouseEnter={() => setHoveredCommission(item.commission)}
+        onMouseLeave={() => setHoveredCommission(null)}
+      >
+        <OrderItemDisplay item={item} onEdit={setEditingItem} level={level} />
+      </div>
     );
   };
 

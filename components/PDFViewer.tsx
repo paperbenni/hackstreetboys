@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
+import { useHover } from './process-pdf/hover-context';
 
 // Set up the worker for react-pdf
 if (typeof window !== 'undefined') {
@@ -36,8 +37,11 @@ export default function PDFViewer({
     pageWidthInches = 8.2639,
     pageHeightInches = 11.6806
 }: PDFViewerProps) {
+    const { hoveredCommission } = useHover();
     const [numPages, setNumPages] = useState<number>();
     const [pageNumber, setPageNumber] = useState<number>(1);
+    const [textPositions, setTextPositions] = useState<any[]>([]);
+    const containerRef = useRef<HTMLDivElement>(null);
     const FIXED_PDF_WIDTH = 500; // px (smaller display)
     const aspectRatio = pageHeightInches / pageWidthInches;
     const renderedHeight = FIXED_PDF_WIDTH * aspectRatio;
@@ -64,12 +68,55 @@ export default function PDFViewer({
         setNumPages(numPages);
     }
 
+    // Extract text positions from the PDF page
+    async function extractTextPositions(pdfUrl: string | File, pageNumber: number) {
+        let loadingTask;
+        if (typeof pdfUrl === 'string') {
+            loadingTask = pdfjs.getDocument(pdfUrl);
+        } else {
+            loadingTask = pdfjs.getDocument({ data: await pdfUrl.arrayBuffer() });
+        }
+        const pdf = await loadingTask.promise;
+        const page = await pdf.getPage(pageNumber);
+        const textContent = await page.getTextContent();
+        const viewport = page.getViewport({ scale: 1 });
+        const items = textContent.items.map((item: any) => {
+            const transform = item.transform;
+            const x = transform[4];
+            const y = transform[5];
+            const width = item.width;
+            const height = item.height;
+            return {
+                text: item.str,
+                x,
+                y,
+                width,
+                height,
+                page: pageNumber,
+            };
+        });
+        setTextPositions(items);
+    }
+
+    useEffect(() => {
+        if (objectUrl && pageNumber) {
+            extractTextPositions(objectUrl, pageNumber);
+        }
+    }, [objectUrl, pageNumber]);
+
+    // Find matches for hoveredCommission
+    const highlightBoxes = hoveredCommission
+        ? textPositions.filter(
+            (item) => item.text.trim() === hoveredCommission.trim()
+        )
+        : [];
+
     if (!objectUrl) {
         return <div className="text-lg">Preparing PDF...</div>;
     }
 
     return (
-        <div className={`flex flex-col items-center ${className}`}>
+        <div className={`flex flex-col items-center ${className}`} ref={containerRef}>
             <div className="relative" style={{ width: FIXED_PDF_WIDTH, height: renderedHeight }}>
                 <Document
                     file={objectUrl}
@@ -87,8 +134,9 @@ export default function PDFViewer({
                         width={FIXED_PDF_WIDTH}
                     />
                 </Document>
-                {/* Polygon overlays */}
-                {boundingBoxes.length > 0 && (
+                
+                {/* Highlight overlays for hovered commission */}
+                {highlightBoxes.length > 0 && (
                     <svg
                         style={{
                             position: 'absolute',
@@ -101,23 +149,28 @@ export default function PDFViewer({
                         width={pageSize.width}
                         height={pageSize.height}
                     >
-                        {boundingBoxes.map((box) =>
-                            visibleBoxes[box.id] && (
-                                <polygon
-                                    key={box.id}
-                                    points={box.coordinates.map((coord, index) => {
-                                        const isX = index % 2 === 0;
-                                        const value = isX
-                                            ? (coord / pageWidthInches) * pageSize.width
-                                            : (coord / pageHeightInches) * pageSize.height;
-                                        return value;
-                                    }).join(",")}
-                                    fill={box.color || "rgba(255,0,0,0.2)"}
-                                    stroke={box.strokeColor || "red"}
-                                    strokeWidth={2}
-                                />
-                            )
-                        )}
+                        {highlightBoxes.map((item, idx) => {
+                          const pdfPageHeight = pageHeightInches * 72; // 1 inch = 72 points
+                          const flippedY = pdfPageHeight - item.y - item.height;
+                          const svgX = (item.x / pageWidthInches / 72) * pageSize.width;
+                          const svgY = (flippedY / pageHeightInches / 72) * pageSize.height;
+                          const svgWidth = (item.width / pageWidthInches / 72) * pageSize.width;
+                          const svgHeight = (item.height / pageHeightInches / 72) * pageSize.height;
+                          const padding = 8;
+                          return (
+                            <rect
+                              key={idx}
+                              x={svgX - padding}
+                              y={svgY - padding}
+                              width={svgWidth + 2 * padding}
+                              height={svgHeight + 2 * padding}
+                              fill="rgba(255,0,0,0.3)"
+                              stroke="black"
+                              strokeWidth={4}
+                              rx={2}
+                            />
+                          );
+                        })}
                     </svg>
                 )}
             </div>

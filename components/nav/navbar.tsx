@@ -34,7 +34,7 @@ export function Navbar() {
           {/* Logo */}
           <div className="flex-shrink-0">
             <Link href="/" className="flex-shrink-0" aria-label="Home">
-              <Image src="/kochlogo.svg" alt="Koch Logo" width={64} height={64} priority />
+              <Image src="/kochlogo.svg" alt="Koch Logo" width={100} height={100} priority />
             </Link>
           </div>
 
