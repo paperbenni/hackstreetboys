@@ -9,6 +9,7 @@
 - Red components (API Layer) handle external service integration
 - Yellow components (Storage Layer) manage configuration and caching
 
+The arrows show data flow - for example, when a PDF is uploaded through the UI, it flows through the Next.js app to the API routes, then to the OpenRouter API, which uses the streaming service to process the content and store results in the cache.
 
 The application consists of several key components that work together to process PDFs and handle AI interactions:
 
