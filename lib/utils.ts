@@ -179,10 +179,16 @@ export async function processJsonStreamingResponse(
       
       // Decode the chunk
       const chunk = new TextDecoder().decode(value);
-      const lines = chunk.split('\n').filter(line => line.trim());
+      const lines = chunk.split('\n').filter(line => line.trim() !== '');
       
       for (const line of lines) {
         try {
+          // Skip lines that don't look like JSON
+          if (!line.startsWith('{') && !line.startsWith('[')) {
+            console.warn('Skipping invalid JSON line:', line);
+            continue;
+          }
+          
           const data = JSON.parse(line);
           
           switch (data.type) {
@@ -210,7 +216,7 @@ export async function processJsonStreamingResponse(
               throw new Error(data.error || "Unknown streaming error");
           }
         } catch (err) {
-          console.error('Error parsing JSON stream chunk:', err);
+          console.error('Error parsing JSON stream chunk:', err, 'Line:', line);
           // Continue processing other chunks even if one fails
         }
       }
