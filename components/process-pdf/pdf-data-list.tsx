@@ -29,11 +29,10 @@ export function PDFDataList({
   rawMarkdown = "",
   maxHeight = "70vh",
   error = null,
+  streaming = false
 }: PDFDataListProps) {
   const [activeTab, setActiveTab] = useState<"data" | "debug">("data");
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
-    new Set(),
-  );
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [parsedData, setParsedData] = useState<OrderItemUnion[]>([]);
   const [summary, setSummary] = useState<{
     [key: string]: { count: number; item: string };
@@ -41,6 +40,7 @@ export function PDFDataList({
   const [jsonError, setJsonError] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<Order | null>(null);
   const [copyStatus, setCopyStatus] = useState<string | null>(null);
+  const [isJsonData, setIsJsonData] = useState(false);
 
   // No need to reset tab now, since we always show debug tab when there's data
   useEffect(() => {
@@ -53,70 +53,86 @@ export function PDFDataList({
   useEffect(() => {
     if (data) {
       try {
-        // Extract JSON from markdown if needed
-        const extractedJson = extractJsonFromMarkdown(data);
-        let parsedJson;
-
+        // First try to parse as JSON directly
         try {
-          parsedJson = JSON.parse(extractedJson);
-        } catch (e) {
-          console.error("Failed to parse JSON:", e);
-          setJsonError(
-            `Invalid JSON format: ${e instanceof Error ? e.message : String(e)}`,
-          );
+          const parsedJson = JSON.parse(data);
+          handleJsonData(parsedJson);
+          setIsJsonData(true);
           return;
+        } catch (e) {
+          // Not JSON, continue to try extracting from markdown
         }
 
-        // Initialize itemsArray for different possible JSON structures
-        let itemsArray: OrderItemUnion[] = [];
-
-        // Handle if the response is directly an array
-        if (Array.isArray(parsedJson)) {
-          itemsArray = parsedJson;
-        }
-        // Handle if items are in a nested property
-        else if (parsedJson.items && Array.isArray(parsedJson.items)) {
-          itemsArray = parsedJson.items;
-        }
-        // Handle if response has a content property that contains items
-        else if (parsedJson.content && Array.isArray(parsedJson.content)) {
-          itemsArray = parsedJson.content;
-        }
-        // Handle if there's a different structure entirely
-        else {
-          // Try to extract any array found in the JSON
-          const arrays = Object.values(parsedJson).filter((value) =>
-            Array.isArray(value),
-          );
-          if (arrays.length > 0) {
-            // Use the first array found
-            itemsArray = arrays[0] as OrderItemUnion[];
-          } else {
-            // Wrap the object in an array if no arrays were found
-            itemsArray = [parsedJson as OrderItemUnion];
+        // Try to extract JSON from markdown
+        const extractedJson = extractJsonFromMarkdown(data);
+        if (extractedJson) {
+          try {
+            const parsedJson = JSON.parse(extractedJson);
+            handleJsonData(parsedJson);
+            setIsJsonData(true);
+            return;
+          } catch (e) {
+            console.error("Failed to parse extracted JSON:", e);
           }
         }
 
-        // Update state with parsed data
-        if (itemsArray.length > 0) {
-          setParsedData(itemsArray as OrderItemUnion[]);
-          setJsonError(null);
-
-          // Generate summary for required Artikel
-          generateSummary(itemsArray as OrderItemUnion[]);
-        } else {
-          setJsonError("No valid data found in the response.");
-        }
+        // If we get here, it's not JSON data
+        setIsJsonData(false);
+        setParsedData([]);
+        setJsonError(null);
       } catch (err) {
-        console.error("Error processing JSON data:", err);
+        console.error("Error processing data:", err);
         setJsonError(
           `Error processing data: ${
             err instanceof Error ? err.message : String(err)
           }`,
         );
+        setIsJsonData(false);
       }
     }
   }, [data]);
+
+  const handleJsonData = (parsedJson: any) => {
+    // Initialize itemsArray for different possible JSON structures
+    let itemsArray: OrderItemUnion[] = [];
+
+    // Handle if the response is directly an array
+    if (Array.isArray(parsedJson)) {
+      itemsArray = parsedJson;
+    }
+    // Handle if items are in a nested property
+    else if (parsedJson.items && Array.isArray(parsedJson.items)) {
+      itemsArray = parsedJson.items;
+    }
+    // Handle if response has a content property that contains items
+    else if (parsedJson.content && Array.isArray(parsedJson.content)) {
+      itemsArray = parsedJson.content;
+    }
+    // Handle if there's a different structure entirely
+    else {
+      // Try to extract any array found in the JSON
+      const arrays = Object.values(parsedJson).filter((value) =>
+        Array.isArray(value),
+      );
+      if (arrays.length > 0) {
+        // Use the first array found
+        itemsArray = arrays[0] as OrderItemUnion[];
+      } else {
+        // Wrap the object in an array if no arrays were found
+        itemsArray = [parsedJson as OrderItemUnion];
+      }
+    }
+
+    // Update state with parsed data
+    if (itemsArray.length > 0) {
+      setParsedData(itemsArray as OrderItemUnion[]);
+      setJsonError(null);
+      // Generate summary for required Artikel
+      generateSummary(itemsArray as OrderItemUnion[]);
+    } else {
+      setJsonError("No valid data found in the response.");
+    }
+  };
 
   // Generate a summary of article quantities for the required Artikel
   const generateSummary = (items: OrderItemUnion[]) => {
@@ -127,8 +143,6 @@ export function PDFDataList({
         const sku = item.sku;
         const quantity = parseInt(item.quantity) || 1;
         const itemName = item.name;
-        // We don't need to track the path for orders, but we keep the code commented for future use
-        // const fullPath = path ? `${path} / ${itemName}` : itemName;
 
         // Create a key based on SKU to track quantities
         if (sku) {
@@ -306,7 +320,7 @@ export function PDFDataList({
           </Button>
         )}
       </div>
-
+      
       <Card className="flex-grow overflow-hidden shadow-lg">
         <CardContent className="p-0 h-full space-y-3">
           {isLoading ? (
@@ -327,7 +341,7 @@ export function PDFDataList({
                 preventTruncation={true}
               />
             </div>
-          ) : (
+          ) : isJsonData ? (
             <div className="max-h-[70vh] overflow-y-auto overflow-x-hidden">
               {/* Control buttons */}
               <div className="p-4 flex justify-between sticky top-0 z-10 bg-white dark:bg-slate-950 shadow-md">
@@ -388,6 +402,29 @@ export function PDFDataList({
                 ) : (
                   <div className="text-slate-500 dark:text-slate-400">
                     No data available to display.
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="p-6">
+              <div className="prose prose-slate dark:prose-invert max-w-none">
+                <div className="py-4 px-6 bg-slate-50 dark:bg-slate-800/30 rounded-lg border border-slate-200 dark:border-slate-700">
+                  {data.split('\n').map((paragraph, index) => (
+                    <p 
+                      key={`paragraph-${index}`}
+                      className="my-2 text-slate-800 dark:text-slate-300"
+                    >
+                      {paragraph}
+                      {streaming && index === data.split('\n').length - 1 && (
+                        <span className="inline-block animate-pulse">▋</span>
+                      )}
+                    </p>
+                  ))}
+                </div>
+                {streaming && (
+                  <div className="text-center mt-4 text-sm text-slate-500">
+                    Processing... this may take a while for large documents
                   </div>
                 )}
               </div>
