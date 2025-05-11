@@ -1,4 +1,36 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## Challenge Koch-a-doc
+
+### Architecture Diagram
+
+![Alt text](./Architecture_Diagram.png)
+
+- Blue components (UI Layer) handle user interactions and frontend components
+- Green components (Service Layer) manage processing and business logic
+- Red components (API Layer) handle external service integration
+- Yellow components (Storage Layer) manage configuration and caching
+
+The arrows show data flow - for example, when a PDF is uploaded through the UI, it flows through the Next.js app to the API routes, then to the OpenRouter API, which uses the streaming service to process the content and store results in the cache.
+
+The application consists of several key components that work together to process PDFs and handle AI interactions:
+
+### UI Components
+
+* **PDFViewer.tsx**: Handles PDF display and interaction
+* **DebugTab.tsx**: Provides debugging interface
+* **Navbar.tsx**: Navigation system
+* **UI Components**: Reusable UI elements
+
+### Processing Components
+
+* **pdf-parser.ts**: Processes PDF content
+* **export-config.tsx**: Manages export configurations
+* **pdf-upload.tsx**: Handles PDF file uploads
+
+### API Integration
+
+* **LlmClientExample.tsx**: Manages LLM interactions
+* **Response Cache**: Handles cached results
+
 
 ## Getting Started
 
@@ -77,22 +109,11 @@ When running with Docker, all dependencies are included in the container. When r
 - Python 3.x with pip
 - The markitdown Python package: `pip install 'markitdown[all]'`
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
 ## Deployment Options
 
 ### Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
 ### Deploy with Docker
 
