@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
     // Prompt for extracting the items
     // This is just a placeholder for now
     const prompt = `
-testing stuf
+      testing stuf
       ${fullMarkdown}
     `;
 
@@ -95,7 +95,7 @@ testing stuf
 
     // Override streaming if disabled in environment variables
     const disableStreaming = process.env.DISABLE_STREAMING === "true";
-    
+
     // Create encoder for output
     const encoder = new TextEncoder();
 
@@ -107,7 +107,7 @@ testing stuf
           messages,
           stream: false,
         });
-        
+
         return new Response(
           JSON.stringify({
             summary: response.content,
@@ -129,7 +129,7 @@ testing stuf
         );
       }
     }
-    
+
     // Handle streaming case
     const customReadable = new ReadableStream({
       async start(controller) {
@@ -143,11 +143,11 @@ testing stuf
               }) + "\n",
             ),
           );
-          
+
           // Create a streaming controller
           const streamController = {
             onData: (chunk: { type: string; content?: string }) => {
-              if (chunk.type === 'delta' && chunk.content) {
+              if (chunk.type === "delta" && chunk.content) {
                 controller.enqueue(
                   encoder.encode(
                     JSON.stringify({
@@ -163,7 +163,9 @@ testing stuf
                 encoder.encode(
                   JSON.stringify({
                     type: "complete",
-                    summary: response.content || "Could not generate summary from the provided PDF.",
+                    summary:
+                      response.content ||
+                      "Could not generate summary from the provided PDF.",
                   }) + "\n",
                 ),
               );
@@ -179,17 +181,20 @@ testing stuf
                 ),
               );
               controller.close();
-            }
+            },
           };
-          
+
           // Process the streaming request
           await llmService.processStream(
             {
               model: DEFAULT_MODEL,
-              messages: messages as Array<{role: "user" | "assistant" | "system", content: string}>,
+              messages: messages as Array<{
+                role: "user" | "assistant" | "system";
+                content: string;
+              }>,
               stream: true,
             },
-            streamController
+            streamController,
           );
         } catch (error) {
           console.error("Streaming error:", error);

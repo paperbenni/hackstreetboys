@@ -12,6 +12,14 @@ import DebugTab from "@/components/DebugTab";
 import { Order, OrderCategory, OrderItemUnion, isOrder } from "./types";
 import { OrderSummary } from "./order-summary";
 import { parse } from "js2xmlparser";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { ExportConfig, ExportConfigForm } from "./export-config";
 import { useHover } from './hover-context';
 
@@ -43,6 +51,7 @@ export function PDFDataList({
   const [editingItem, setEditingItem] = useState<Order | null>(null);
   const [copyStatus, setCopyStatus] = useState<string | null>(null);
   const { setHoveredCommission } = useHover();
+  const [deleteConfirmItem, setDeleteConfirmItem] = useState<Order | null>(null);
 
   // No need to reset tab now, since we always show debug tab when there's data
   useEffect(() => {
@@ -218,22 +227,79 @@ export function PDFDataList({
         onMouseEnter={() => setHoveredCommission(item.commission)}
         onMouseLeave={() => setHoveredCommission(null)}
       >
-        <OrderItemDisplay item={item} onEdit={setEditingItem} level={level} />
+      <OrderItemDisplay 
+        item={item} 
+        onEdit={setEditingItem} 
+        onDelete={(item) => setDeleteConfirmItem(item)}
+        level={level} 
+      />
       </div>
     );
   };
 
+  // Helper function to generate a unique signature for an order item
+  const getItemSignature = (item: Order) => {
+    return `${item.sku || ''}-${item.name || ''}-${item.quantity || ''}-${item.text || ''}-${item.price || ''}`;
+  };
+
+  // Handle deleting an order item
+  const handleDeleteItem = (itemToDelete: Order) => {
+    const itemToDeleteSignature = getItemSignature(itemToDelete);
+    let deletedOne = false;
+    
+    const deleteItemFromTree = (items: OrderItemUnion[]): OrderItemUnion[] => {
+      return items.reduce<OrderItemUnion[]>((acc, item) => {
+        if (isOrder(item)) {
+          // Skip the item to delete - only delete one instance with matching signature
+          if (
+            itemToDelete && 
+            !deletedOne && 
+            getItemSignature(item) === itemToDeleteSignature
+          ) {
+            deletedOne = true; // Mark as deleted to prevent multiple deletions
+            return acc; // Skip this item (delete it)
+          }
+          acc.push(item);
+        } else if (item.content) {
+          // Recursively filter items in the category
+          const filteredContent = deleteItemFromTree(item.content);
+          // Only include categories that still have content after filtering
+          if (filteredContent.length > 0) {
+            acc.push({
+              ...item,
+              content: filteredContent,
+            });
+          }
+        }
+        return acc;
+      }, []);
+    };
+
+    // Update the parsed data by removing the item
+    setParsedData((prev) => {
+      const updatedData = deleteItemFromTree(prev);
+      // Regenerate summary with the updated data
+      setTimeout(() => generateSummary(updatedData), 0);
+      return updatedData;
+    });
+    setDeleteConfirmItem(null);
+  };
+
   // Handle updating an order item
   const handleUpdateItem = (updatedItem: Order) => {
+    const editingItemSignature = editingItem ? getItemSignature(editingItem) : '';
+    let updatedOne = false;
+    
     const updateItemInTree = (items: OrderItemUnion[]): OrderItemUnion[] => {
       return items.map((item) => {
         if (isOrder(item)) {
           if (
-            editingItem &&
-            item.sku === editingItem.sku &&
-            item.name === editingItem.name
+            editingItem && 
+            !updatedOne && 
+            getItemSignature(item) === editingItemSignature
           ) {
             // This is the item we want to update
+            updatedOne = true; // Mark as updated to prevent multiple updates
             return { ...item, ...updatedItem };
           }
           return item;
@@ -249,10 +315,12 @@ export function PDFDataList({
     };
 
     // Update the parsed data
-    setParsedData((prev) => updateItemInTree(prev));
-
-    // Regenerate summary
-    generateSummary(parsedData);
+    setParsedData((prev) => {
+      const updatedData = updateItemInTree(prev);
+      // Regenerate summary with the updated data
+      setTimeout(() => generateSummary(updatedData), 0);
+      return updatedData;
+    });
   };
 
   // Render the summary of required Artikel
@@ -293,6 +361,43 @@ export function PDFDataList({
 
   return (
     <div className="w-full h-full flex flex-col">
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteConfirmItem !== null} onOpenChange={(open) => !open && setDeleteConfirmItem(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Order Item</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this order item? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {deleteConfirmItem && (
+              <div className="flex flex-col gap-2">
+                <p><strong>Name:</strong> {deleteConfirmItem.name || "Unnamed item"}</p>
+                {deleteConfirmItem.sku && <p><strong>SKU:</strong> {deleteConfirmItem.sku}</p>}
+                {deleteConfirmItem.quantity && (
+                  <p><strong>Quantity:</strong> {deleteConfirmItem.quantity} {deleteConfirmItem.quantityUnit || ""}</p>
+                )}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setDeleteConfirmItem(null)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={() => handleDeleteItem(deleteConfirmItem!)}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <div className="flex items-center mb-4 space-x-2">
         <Button
           variant={activeTab === "data" ? "indigo" : "outline"}

@@ -1,15 +1,16 @@
 import React from "react";
-import { AlertCircle, Package, Pencil } from "lucide-react";
+import { AlertCircle, Package, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Order } from "./types";
 
 interface OrderItemDisplayProps {
   item: Order;
   onEdit: (item: Order) => void;
+  onDelete?: (item: Order) => void;
   level?: number;
 }
 
-export function OrderItemDisplay({ item, onEdit, level = 0 }: OrderItemDisplayProps) {
+export function OrderItemDisplay({ item, onEdit, onDelete, level = 0 }: OrderItemDisplayProps) {
   // Calculate left padding based on level - match the category indentation pattern
   const paddingLeft = `${(level * 24) + 12}px`;
   
@@ -37,18 +38,34 @@ export function OrderItemDisplay({ item, onEdit, level = 0 }: OrderItemDisplayPr
               </div>
             )}
           </div>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-7 w-7 p-0 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-all duration-200"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit(item);
-            }}
-          >
-            <Pencil className="h-4 w-4 text-slate-500" />
-            <span className="sr-only">Edit item</span>
-          </Button>
+          <div className="flex items-center space-x-1">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-7 w-7 p-0 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-all duration-200"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(item);
+              }}
+            >
+              <Pencil className="h-4 w-4 text-slate-500" />
+              <span className="sr-only">Edit item</span>
+            </Button>
+            {onDelete && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-7 w-7 p-0 rounded-full hover:bg-red-100 dark:hover:bg-red-950/30 hover:text-red-600 transition-all duration-200"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(item);
+                }}
+              >
+                <Trash2 className="h-4 w-4 text-red-500" />
+                <span className="sr-only">Delete item</span>
+              </Button>
+            )}
+          </div>
         </div>
 
         <div className="text-slate-700 dark:text-slate-300 mt-2">
