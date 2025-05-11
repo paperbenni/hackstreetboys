@@ -32,7 +32,7 @@ This script will:
 
 2. Edit the `.env` file and add your OpenRouter API key:
    ```
-   OPENAPI_KEY=your_openrouter_api_key_here
+   OPENAI_KEY=your_openrouter_api_key_here
    ```
 
 ### Building and Running

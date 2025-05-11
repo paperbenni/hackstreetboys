@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   hackstreetboys-app:
@@ -9,12 +9,12 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=development
-      - OPENAPI_KEY=${OPENAPI_KEY}
+      - OPENAI_KEY=${OPENAI_KEY}
     volumes:
       - .:/app
       - /app/node_modules
       - app-tmp:/tmp
-    command: yarn dev
+    command: npm run dev
 
 volumes:
   app-tmp:

@@ -66,7 +66,7 @@ This application requires an OpenRouter API key to function:
    ```
 4. Add your OpenRouter API key to the `.env` file:
    ```
-   OPENAPI_KEY=your_openrouter_api_key_here
+   OPENAI_KEY=your_openrouter_api_key_here
    ```
 
 ### Streaming Responses

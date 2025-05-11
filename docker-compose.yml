@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   hackstreetboys-app:
@@ -9,7 +9,9 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - OPENAPI_KEY=${OPENAPI_KEY}
+      - OPENAI_KEY=${OPENAI_KEY}
+      - FORM_RECOGNIZER_KEY=${FORM_RECOGNIZER_KEY}
+      - FORM_RECOGNIZER_ENDPOINT=${FORM_RECOGNIZER_ENDPOINT}
     restart: unless-stopped
     volumes:
       - app-tmp:/tmp
