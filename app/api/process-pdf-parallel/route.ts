@@ -123,15 +123,21 @@ export async function POST(request: NextRequest) {
 
     // Prepare combined response object
     const response: CombinedProcessResult = {
-      llmResult: llmResult.status === "fulfilled" ? llmResult.value : { error: "LLM process failed" },
-      azureResult: azureResult.status === "fulfilled" ? azureResult.value : { 
-        error: "Azure process failed",
-        commissionData: [],
-        width: 0,
-        height: 0,
-        pageWidthInches: 0,
-        pageHeightInches: 0,
-      },
+      llmResult:
+        llmResult.status === "fulfilled"
+          ? llmResult.value
+          : { error: "LLM process failed" },
+      azureResult:
+        azureResult.status === "fulfilled"
+          ? azureResult.value
+          : {
+              error: "Azure process failed",
+              commissionData: [],
+              width: 0,
+              height: 0,
+              pageWidthInches: 0,
+              pageHeightInches: 0,
+            },
     };
 
     // Create a streaming response
@@ -237,7 +243,11 @@ export async function POST(request: NextRequest) {
 }
 
 // Process the PDF with LLM
-async function processWithLlm(file: File, buffer: Buffer, apiKey: string): Promise<LlmProcessResult> {
+async function processWithLlm(
+  file: File,
+  buffer: Buffer,
+  apiKey: string,
+): Promise<LlmProcessResult> {
   try {
     // Parse the PDF file using our custom wrapper
     let pdfMarkdown = "";
@@ -246,14 +256,15 @@ async function processWithLlm(file: File, buffer: Buffer, apiKey: string): Promi
     } catch (err) {
       console.error("PDF extraction error:", err);
       return {
-        error: "Failed to parse the PDF. The file might be corrupted or password-protected."
+        error:
+          "Failed to parse the PDF. The file might be corrupted or password-protected.",
       };
     }
 
     // If the PDF is empty or has minimal markdown, return an error
     if (!pdfMarkdown || pdfMarkdown.trim().length < 10) {
       return {
-        error: "The PDF appears to be empty or contains too little content"
+        error: "The PDF appears to be empty or contains too little content",
       };
     }
 
@@ -275,9 +286,10 @@ async function processWithLlm(file: File, buffer: Buffer, apiKey: string): Promi
 
       # Tree Structure
 
-      The tree structure explained below may capture numerical position (number) of the parent, or
-      sometimes the parent is not numerical but a string. Then do use the string as the parent. If
-      there is no tree structure, use the root node for the parent.
+      The orders are sometimes formatted into a tree structure for different
+      categories. This may be through numbers or category headings. If there is
+      no discernible structure, come up with categories on your own. The
+      interfaces below allow for representing trees.
 
       # Interfaces
 
@@ -449,7 +461,9 @@ async function processWithLlm(file: File, buffer: Buffer, apiKey: string): Promi
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
       return {
-        error: errorData?.error?.message || `API request failed with status ${response.status}`,
+        error:
+          errorData?.error?.message ||
+          `API request failed with status ${response.status}`,
       };
     }
 
@@ -485,7 +499,10 @@ async function processWithLlm(file: File, buffer: Buffer, apiKey: string): Promi
   } catch (error) {
     console.error("Error in LLM processing:", error);
     return {
-      error: error instanceof Error ? error.message : "Unknown error in LLM processing",
+      error:
+        error instanceof Error
+          ? error.message
+          : "Unknown error in LLM processing",
     };
   }
 }
@@ -508,7 +525,10 @@ async function processWithAzure(buffer: Buffer): Promise<AzureProcessResult> {
       });
 
     if (isUnexpected(initialResponse)) {
-      throw new Error(initialResponse.body?.error?.message || "Unexpected response from Azure");
+      throw new Error(
+        initialResponse.body?.error?.message ||
+          "Unexpected response from Azure",
+      );
     }
 
     const poller = getLongRunningPoller(client, initialResponse);
@@ -520,12 +540,13 @@ async function processWithAzure(buffer: Buffer): Promise<AzureProcessResult> {
     // you would train a custom model to detect orders)
     // For now, we'll extract paragraphs and tables as potential orders
     const commissionData: CommissionData[] = [];
-    
+
     // Extract tables as potential orders
     analyzeResult?.tables?.forEach((table, tableIndex) => {
       // Get the bounding polygon for the table
       const polygon = table.boundingRegions?.[0]?.polygon || [];
-      if (polygon.length === 8) { // Ensure we have a valid polygon
+      if (polygon.length === 8) {
+        // Ensure we have a valid polygon
         commissionData.push({
           id: `table-${tableIndex}`,
           commission: `Table ${tableIndex + 1}`,
@@ -533,18 +554,24 @@ async function processWithAzure(buffer: Buffer): Promise<AzureProcessResult> {
         });
       }
     });
-    
+
     // Extract paragraphs that might be orders
     analyzeResult?.paragraphs?.forEach((paragraph, paraIndex) => {
       // Get the bounding polygon for the paragraph
       const polygon = paragraph.boundingRegions?.[0]?.polygon || [];
-      if (polygon.length === 8) { // Ensure we have a valid polygon
+      if (polygon.length === 8) {
+        // Ensure we have a valid polygon
         // Check if the paragraph contains order-related keywords
         const content = paragraph.content || "";
-        if (content.match(/pos\.?|position|auftrag|order|commission|nr\.?|st(ü|u)ck|menge|quantity/i)) {
+        if (
+          content.match(
+            /pos\.?|position|auftrag|order|commission|nr\.?|st(ü|u)ck|menge|quantity/i,
+          )
+        ) {
           commissionData.push({
             id: `para-${paraIndex}`,
-            commission: content.length > 30 ? content.substring(0, 30) + "..." : content,
+            commission:
+              content.length > 30 ? content.substring(0, 30) + "..." : content,
             coordinates: polygon,
           });
         }
@@ -565,7 +592,10 @@ async function processWithAzure(buffer: Buffer): Promise<AzureProcessResult> {
   } catch (error) {
     console.error("Error in Azure processing:", error);
     return {
-      error: error instanceof Error ? error.message : "Unknown error in Azure processing",
+      error:
+        error instanceof Error
+          ? error.message
+          : "Unknown error in Azure processing",
       commissionData: [],
       width: 612,
       height: 792,
@@ -576,7 +606,10 @@ async function processWithAzure(buffer: Buffer): Promise<AzureProcessResult> {
 }
 
 // Process streaming response from OpenRouter
-async function processStreamingResponse(response: Response, controller: StreamController) {
+async function processStreamingResponse(
+  response: Response,
+  controller: StreamController,
+) {
   try {
     const reader = response.body?.getReader();
     if (!reader) throw new Error("Response body is null");
@@ -640,10 +673,10 @@ async function processStreamingResponse(response: Response, controller: StreamCo
     } finally {
       // Make sure to clean up
       reader.cancel().catch(console.error);
-      
+
       // Send complete message when done
       controller.onComplete(
-        summaryContent || "Could not generate summary from the provided PDF."
+        summaryContent || "Could not generate summary from the provided PDF.",
       );
     }
   } catch (error) {
