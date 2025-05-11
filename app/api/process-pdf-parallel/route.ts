@@ -273,9 +273,8 @@ async function processWithLlm(
 
     // Prompt for extracting the items
     const prompt = `
-      You are a diligent office worker, you know that if you cannot complete
-      this task or make even a single mistake there will be grave consequences
-      for the people you love and yourself.
+      You are a diligent accountant who knows that getting a number wrong
+      will result in losing a lot of money
 
       # Instruction overview
 
@@ -290,6 +289,10 @@ async function processWithLlm(
       categories. This may be through numbers or category headings. If there is
       no discernible structure, come up with categories on your own. The
       interfaces below allow for representing trees.
+
+      # Do not make these errors
+
+      There are no floating amounts, a comma or period always means a large amount
 
       # Interfaces
 
