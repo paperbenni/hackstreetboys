@@ -1,8 +1,8 @@
-import { OPENROUTER_API_URL, getApiHeaders, DEFAULT_MODEL } from './openrouter';
+import { OPENROUTER_API_URL, getApiHeaders, DEFAULT_MODEL } from "./openrouter";
 
 // Types for LLM service
 export type Message = {
-  role: 'user' | 'assistant' | 'system';
+  role: "user" | "assistant" | "system";
   content: string;
 };
 
@@ -16,7 +16,7 @@ export type LlmRequest = {
 };
 
 export type LlmResponseChunk = {
-  type: 'delta' | 'init' | 'complete' | 'error';
+  type: "delta" | "init" | "complete" | "error";
   content?: string;
   error?: string;
 };
@@ -47,7 +47,7 @@ export class LlmService {
     apiUrl?: string;
   }) {
     if (!apiKey) {
-      throw new Error('LLM API key is required');
+      throw new Error("LLM API key is required");
     }
     this.apiKey = apiKey;
     this.defaultModel = defaultModel;
@@ -56,10 +56,15 @@ export class LlmService {
 
   // Process a simple, non-streaming request
   async process(request: LlmRequest): Promise<LlmResponse> {
-    const { messages, model = this.defaultModel, maxTokens = 100000, temperature = 0.7 } = request;
-    
+    const {
+      messages,
+      model = this.defaultModel,
+      maxTokens = 100000,
+      temperature = 0.7,
+    } = request;
+
     const response = await fetch(this.apiUrl, {
-      method: 'POST',
+      method: "POST",
       headers: getApiHeaders(this.apiKey),
       body: JSON.stringify({
         model,
@@ -73,31 +78,32 @@ export class LlmService {
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
       throw new Error(
-        errorData?.error?.message || `API request failed with status ${response.status}`
+        errorData?.error?.message ||
+          `API request failed with status ${response.status}`,
       );
     }
 
     const responseData = await response.json();
-    const content = responseData.choices?.[0]?.message?.content || '';
-    
+    const content = responseData.choices?.[0]?.message?.content || "";
+
     return { content };
   }
 
   // Process a streaming request with callbacks
   async processStream(
-    request: LlmRequest, 
-    controller: LlmStreamController
+    request: LlmRequest,
+    controller: LlmStreamController,
   ): Promise<void> {
-    const { 
-      messages, 
-      model = this.defaultModel, 
-      maxTokens = 100000, 
-      temperature = 0.7
+    const {
+      messages,
+      model = this.defaultModel,
+      maxTokens = 100000,
+      temperature = 0.7,
     } = request;
-    
+
     try {
       const response = await fetch(this.apiUrl, {
-        method: 'POST',
+        method: "POST",
         headers: getApiHeaders(this.apiKey),
         body: JSON.stringify({
           model,
@@ -111,15 +117,16 @@ export class LlmService {
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
         throw new Error(
-          errorData?.error?.message || `API request failed with status ${response.status}`
+          errorData?.error?.message ||
+            `API request failed with status ${response.status}`,
         );
       }
 
       const reader = response.body?.getReader();
       if (!reader) throw new Error("Response body is null");
 
-      let accumulatedContent = '';
-      let buffer = '';
+      let accumulatedContent = "";
+      let buffer = "";
       const decoder = new TextDecoder();
 
       try {
@@ -159,7 +166,7 @@ export class LlmService {
 
                   // Send delta to the client
                   controller.onData({
-                    type: 'delta',
+                    type: "delta",
                     content: contentDelta,
                   });
                 }
@@ -183,24 +190,27 @@ export class LlmService {
       });
     } catch (error) {
       // Handle errors
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       console.error("LLM processing error:", errorMessage);
       controller.onError(errorMessage);
     }
   }
 
   // Create a response stream that can be returned from an API route
-  async createResponseStream(request: LlmRequest): Promise<ReadableStream<Uint8Array>> {
+  async createResponseStream(
+    request: LlmRequest,
+  ): Promise<ReadableStream<Uint8Array>> {
     const encoder = new TextEncoder();
     const apiUrl = this.apiUrl;
     const apiKey = this.apiKey;
     const defaultModel = this.defaultModel;
-    
+
     return new ReadableStream({
       async start(controller) {
         try {
           const response = await fetch(apiUrl, {
-            method: 'POST',
+            method: "POST",
             headers: getApiHeaders(apiKey),
             body: JSON.stringify({
               model: request.model || defaultModel,
@@ -214,15 +224,16 @@ export class LlmService {
           if (!response.ok) {
             const errorData = await response.json().catch(() => null);
             throw new Error(
-              errorData?.error?.message || `API request failed with status ${response.status}`
+              errorData?.error?.message ||
+                `API request failed with status ${response.status}`,
             );
           }
 
           const reader = response.body?.getReader();
           if (!reader) throw new Error("Response body is null");
 
-          let accumulatedContent = '';
-          let buffer = '';
+          let accumulatedContent = "";
+          let buffer = "";
           const decoder = new TextDecoder();
 
           try {
@@ -266,8 +277,8 @@ export class LlmService {
                           JSON.stringify({
                             type: "delta",
                             content: contentDelta,
-                          }) + "\n"
-                        )
+                          }) + "\n",
+                        ),
                       );
                     }
                   } catch (e) {
@@ -290,24 +301,24 @@ export class LlmService {
               JSON.stringify({
                 type: "complete",
                 content: accumulatedContent,
-              }) + "\n"
-            )
+              }) + "\n",
+            ),
           );
         } catch (error) {
           console.error("Streaming error:", error);
-          
+
           controller.enqueue(
             encoder.encode(
               JSON.stringify({
                 type: "error",
                 error: error instanceof Error ? error.message : String(error),
-              }) + "\n"
-            )
+              }) + "\n",
+            ),
           );
         } finally {
           controller.close();
         }
-      }
+      },
     });
   }
 
@@ -319,10 +330,10 @@ export class LlmService {
 
 // Helper function to get LLM service instance with environment variables
 export function getLlmService(): LlmService {
-  const apiKey = process.env.OPENAPI_KEY;
+  const apiKey = process.env.OPENAI_KEY;
   if (!apiKey) {
-    throw new Error('OPENAPI_KEY environment variable is not set');
+    throw new Error("OPENAI_KEY environment variable is not set");
   }
-  
+
   return LlmService.getInstance(apiKey);
 }
