@@ -283,6 +283,9 @@ async function processWithLlm(
       Output nothing else beside the json. Convert the entire list, do not
       leave out any orders or abbreviate anything.
 
+      Do not modify the quantity values, copy them as is. Do not do any
+      processing or leave anything out.
+
       # Tree Structure
 
       The orders are sometimes formatted into a tree structure for different
@@ -290,9 +293,6 @@ async function processWithLlm(
       no discernible structure, come up with categories on your own. The
       interfaces below allow for representing trees.
 
-      # Do not make these errors
-
-      There are no floating amounts, a comma or period always means a large amount
 
       # Interfaces
 
@@ -301,7 +301,7 @@ async function processWithLlm(
         sku: string;
         name: string;
         text: string;
-        quantity: string;
+        quantity: string; // do not do any processing to this, just copy it verbatim
         quantityUnit: string;
         price: string;
         priceUnit: string;
