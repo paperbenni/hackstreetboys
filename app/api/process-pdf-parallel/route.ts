@@ -286,6 +286,9 @@ async function processWithLlm(
       Do not modify the quantity values, copy them as is. Do not do any
       processing or leave anything out.
 
+      If you are unsure if something is an order or if the order is recorded
+      correctly, set the unsure field to true.
+
       # Tree Structure
 
       The orders are sometimes formatted into a tree structure for different
