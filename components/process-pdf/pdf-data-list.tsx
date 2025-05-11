@@ -41,6 +41,8 @@ export function PDFDataList({
   const [editingItem, setEditingItem] = useState<Order | null>(null);
   const [copyStatus, setCopyStatus] = useState<string | null>(null);
   const [isJsonData, setIsJsonData] = useState(false);
+  const [hoveredItem, setHoveredItem] = useState<Order | null>(null);
+  console.log("parsedData", parsedData);
 
   // No need to reset tab now, since we always show debug tab when there's data
   useEffect(() => {
@@ -226,7 +228,13 @@ export function PDFDataList({
   // Render a single order item
   const renderOrderItem = (item: Order, level: number = 0) => {
     return (
-      <OrderItemDisplay item={item} onEdit={setEditingItem} level={level} />
+      <OrderItemDisplay 
+        item={item} 
+        onEdit={setEditingItem} 
+        level={level}
+        isHovered={hoveredItem?.sku === item.sku && hoveredItem?.name === item.name}
+        onHover={(isHovering) => setHoveredItem(isHovering ? item : null)}
+      />
     );
   };
 
