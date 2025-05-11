@@ -28,17 +28,17 @@ ENV PATH="/app/venv/bin:$PATH"
 # Install markitdown Python package in the virtual environment
 RUN pip3 install --no-cache-dir 'markitdown[all]'
 
-# Copy package.json and yarn.lock
-COPY package.json yarn.lock ./
+# Copy package.json and package-lock.json
+COPY package.json package-lock.json ./
 
 # Install dependencies
-RUN yarn install --frozen-lockfile
+RUN npm ci
 
 # Copy the rest of the application code
 COPY --chown=appuser:appuser . .
 
 # Build the application
-RUN yarn build
+RUN npm run build
 
 # Set ownership of the application directory to the non-root user
 RUN chown -R appuser:appuser /app
@@ -50,4 +50,4 @@ USER appuser
 EXPOSE 3000
 
 # Start the application
-CMD ["yarn", "start"]
+CMD ["npm", "start"]

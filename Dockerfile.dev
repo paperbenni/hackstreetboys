@@ -27,11 +27,11 @@ ENV PATH="/app/venv/bin:$PATH"
 # Install markitdown Python package in the virtual environment
 RUN pip3 install --no-cache-dir 'markitdown[all]'
 
-# Copy package.json and yarn.lock
-COPY package.json yarn.lock ./
+# Copy package.json and package-lock.json
+COPY package.json package-lock.json ./
 
 # Install dependencies
-RUN yarn install
+RUN npm install
 
 # Copy the rest of the application code
 COPY --chown=appuser:appuser . .
@@ -46,4 +46,4 @@ USER appuser
 EXPOSE 3000
 
 # Start the dev server (container will be overridden by docker-compose command)
-CMD ["yarn", "dev"]
+CMD ["npm", "run", "dev"]
