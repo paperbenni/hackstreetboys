@@ -1,6 +1,3 @@
-# DEPRECATED, SWITCH TO THE PAPERBENNI BRANCH
-
-
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
@@ -48,6 +45,7 @@ This application uses streaming for OpenAI/OpenRouter API responses, offering se
 2. **Handling Large Output**: Prevents truncation issues with large PDF outputs
 3. **Better User Experience**: Provides real-time feedback during processing
 
+For technical details on how streaming is implemented, see [STREAMING.md](STREAMING.md).
 
 ## Docker Deployment
 

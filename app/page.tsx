@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { PdfUpload } from "@/components/process-pdf/pdf-upload";
 import { PdfViewer } from "@/components/process-pdf/pdf-viewer";
 import { PDFDataList } from "@/components/process-pdf/pdf-data-list";
@@ -8,11 +8,11 @@ import { ApiKeyWarning } from "@/components/api-key-warning";
 import { Button } from "@/components/ui/button";
 import { RefreshCcw } from "lucide-react";
 import { BoundingBox } from "@/components/PDFViewer";
-import { useAtom } from "jotai";
-import { pdfDataAtom } from "@/store/pdf-atoms";
+
 
 export default function ProcessDocumentPage() {
-  const [pdfData, setPdfData] = useAtom(pdfDataAtom);
+  const [summary, setSummary] = useState<string>("");
+  const [rawMarkdown, setRawMarkdown] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [boundingBoxes, setBoundingBoxes] = useState<BoundingBox[]>([]);
@@ -20,97 +20,75 @@ export default function ProcessDocumentPage() {
   const [pageWidth, setPageWidth] = useState<number>(8.5);
   const [pageHeight, setPageHeight] = useState<number>(11);
 
-  // Load PDF data from storage when component mounts
-  useEffect(() => {
-    if (pdfData.lastProcessed) {
-      if (pdfData.width) setPageWidth(pdfData.width);
-      if (pdfData.height) setPageHeight(pdfData.height);
-      
-      // If we have a base64 file and no selected file, convert it back to a File object
-      if (pdfData.base64File && !selectedFile && pdfData.fileName) {
-        const byteString = atob(pdfData.base64File);
-        const ab = new ArrayBuffer(byteString.length);
-        const ia = new Uint8Array(ab);
-        for (let i = 0; i < byteString.length; i++) {
-          ia[i] = byteString.charCodeAt(i);
-        }
-        const blob = new Blob([ab], { type: 'application/pdf' });
-        const file = new File([blob], pdfData.fileName, { type: 'application/pdf' });
-        setSelectedFile(file);
-      }
-    }
-  }, [pdfData, selectedFile]);
-
   const handleProcessingStart = () => {
     setIsLoading(true);
   };
 
   const handlePdfProcessed = (summaryText: string, markdownText: string = "") => {
-    setPdfData(prev => ({
-      ...prev,
-      summary: summaryText,
-      rawMarkdown: markdownText,
-      lastProcessed: new Date().toISOString()
-    }));
-  };
-
-  const handleFileSelected = async (file: File | null) => {
-    setSelectedFile(file);
-    
-    if (file) {
-      // Convert file to base64
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const base64 = e.target?.result as string;
-        // Remove the data URL prefix (e.g., "data:application/pdf;base64,")
-        const base64Data = base64.split(',')[1];
-        
-        setPdfData(prev => ({
-          ...prev,
-          fileName: file.name,
-          fileSize: file.size,
-          base64File: base64Data,
-          lastProcessed: null // Reset last processed since we have a new file
-        }));
-      };
-      reader.readAsDataURL(file);
-    } else {
-      setPdfData(prev => ({
-        ...prev,
-        fileName: null,
-        fileSize: null,
-        base64File: undefined,
-        lastProcessed: null
-      }));
-    }
+    setSummary(summaryText);
+    setRawMarkdown(markdownText);
+    // Keep loading state true while streaming is happening
+    // The loading state will be set to false only when processing is complete
+    // in the PdfUpload component's onComplete handler
   };
 
   const handleTestJsonGenerated = (jsonData: string) => {
     try {
-      const parsedData = JSON.parse(jsonData);
-      setPdfData(prev => ({
-        ...prev,
-        analysisData: parsedData
-      }));
-    } catch (error) {
-      console.error("Error parsing JSON data:", error);
+      // Parse the JSON data
+      const data = JSON.parse(jsonData);
+      
+      // If it's from Azure processing, extract bounding boxes
+      if (data.commissionData && Array.isArray(data.commissionData)) {
+        // Process to our BoundingBox format
+        const boxes: BoundingBox[] = data.commissionData.map((item: {
+          id: string;
+          coordinates: number[];
+          commission: string;
+        }) => ({
+          id: item.id,
+          coordinates: item.coordinates,
+          color: "rgba(255, 0, 0, 0.2)",
+          strokeColor: "red",
+        }));
+        
+        // Set the bounding boxes and make all visible by default
+        setBoundingBoxes(boxes);
+        const boxVisibility: Record<string, boolean> = {};
+        boxes.forEach(box => {
+          boxVisibility[box.id] = true;
+        });
+        setVisibleBoxes(boxVisibility);
+        
+        // Set page dimensions if provided
+        if (data.pageWidthInches && data.pageHeightInches) {
+          setPageWidth(data.pageWidthInches);
+          setPageHeight(data.pageHeightInches);
+        }
+      }
+      
+      // No longer processing JSON content
+      setIsLoading(false);
+    } catch (err) {
+      console.error("Error processing JSON data:", err);
+      setIsLoading(false);
     }
   };
 
-  const handleReset = () => {
-    setSelectedFile(null);
-    setPdfData({
-      pdfUrl: undefined,
-      summary: '',
-      rawMarkdown: '',
-      fileName: null,
-      fileSize: null,
-      lastProcessed: null,
-      analysisData: {},
-      width: undefined,
-      height: undefined,
-      base64File: undefined
-    });
+  const handleFileSelected = (file: File | null) => {
+    setSelectedFile(file);
+    // Reset bounding boxes when a new file is selected
+    setBoundingBoxes([]);
+    setVisibleBoxes({});
+  };
+
+  const handleNewSummary = () => {
+    setSummary("");
+    setRawMarkdown("");
+    setIsLoading(false);
+    // Keep the file selected so user can still see the PDF
+    // But reset the bounding boxes
+    setBoundingBoxes([]);
+    setVisibleBoxes({});
   };
 
   return (
@@ -127,15 +105,18 @@ export default function ProcessDocumentPage() {
           />
         </div>
 
-        {(selectedFile || pdfData.summary || isLoading) && (
+        {(selectedFile || summary || isLoading) && (
           <div className="w-full flex flex-col lg:flex-row gap-4 lg:gap-6 mt-2">
             {selectedFile && (
-              <div className={`w-full ${pdfData.summary || isLoading ? "lg:w-1/2" : "lg:w-full"}`}>
+              <div
+                className={`w-full ${summary || isLoading ? "lg:w-1/2" : "lg:w-full"}`}
+              >
                 <h2 className="text-lg font-medium text-slate-800 dark:text-slate-300 mb-2 lg:mb-4">
                   Document View
                 </h2>
-                <PdfViewer
-                  file={selectedFile}
+                <PdfViewer 
+                  file={selectedFile} 
+                  boundingBoxes={boundingBoxes}
                   visibleBoxes={visibleBoxes}
                   pageWidthInches={pageWidth}
                   pageHeightInches={pageHeight}
@@ -143,29 +124,31 @@ export default function ProcessDocumentPage() {
               </div>
             )}
 
-            {(pdfData.summary || isLoading) && (
-              <div className={`w-full ${selectedFile ? "lg:w-1/2" : "lg:w-full"} mt-4 lg:mt-0`}>
+            {(summary || isLoading) && (
+              <div
+                className={`w-full ${selectedFile ? "lg:w-1/2" : "lg:w-full"} mt-4 lg:mt-0`}
+              >
                 <div className="flex items-center justify-between mb-2 lg:mb-4">
                   <h2 className="text-lg font-medium text-slate-800 dark:text-slate-300">
                     Items
                   </h2>
-                  {pdfData.summary && !isLoading && (
+                  {summary && !isLoading && (
                     <Button
                       variant="indigo"
                       size="sm"
-                      onClick={handleReset}
+                      onClick={handleNewSummary}
                       className="flex items-center gap-1 text-sm"
                     >
-                      <RefreshCcw className="h-3.5 w-3.5" /> Reset
+                      <RefreshCcw className="h-3.5 w-3.5" /> Restart
                     </Button>
                   )}
                 </div>
-                <PDFDataList
-                  data={pdfData.summary}
-                  isLoading={isLoading}
-                  rawMarkdown={pdfData.rawMarkdown}
+                <PDFDataList 
+                  data={summary} 
+                  isLoading={isLoading} 
+                  rawMarkdown={rawMarkdown}
                   maxHeight="70vh"
-                  streaming={isLoading && Boolean(pdfData.summary)}
+                  streaming={isLoading && Boolean(summary)}
                 />
               </div>
             )}

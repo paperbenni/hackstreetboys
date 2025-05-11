@@ -4,6 +4,7 @@ FROM node:20-slim AS base
 # Install Python and pip
 RUN apt-get update && apt-get install -y \
     python3 \
+    python3-venv \
     python3-pip \
     build-essential \
     pkg-config \
@@ -20,20 +21,24 @@ RUN groupadd -r appuser && useradd -m -r -g appuser appuser
 # Set the working directory
 WORKDIR /app
 
-# Install markitdown Python package
-RUN pip3 install 'markitdown[all]'
+# Create and activate a virtual environment for Python
+RUN python3 -m venv /app/venv
+ENV PATH="/app/venv/bin:$PATH"
 
-# Copy package.json and yarn.lock
-COPY package.json yarn.lock ./
+# Install markitdown Python package in the virtual environment
+RUN pip3 install --no-cache-dir 'markitdown[all]'
+
+# Copy package.json and package-lock.json
+COPY package.json package-lock.json ./
 
 # Install dependencies
-RUN yarn install --frozen-lockfile
+RUN npm ci
 
 # Copy the rest of the application code
 COPY --chown=appuser:appuser . .
 
 # Build the application
-RUN yarn build
+RUN npm run build
 
 # Set ownership of the application directory to the non-root user
 RUN chown -R appuser:appuser /app
@@ -45,4 +50,4 @@ USER appuser
 EXPOSE 3000
 
 # Start the application
-CMD ["yarn", "start"]
+CMD ["npm", "start"]

@@ -10,6 +10,9 @@ services:
     environment:
       - NODE_ENV=production
       - OPENAPI_KEY=${OPENAPI_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - FORM_RECOGNIZER_KEY=${FORM_RECOGNIZER_KEY}
+      - FORM_RECOGNIZER_ENDPOINT=${FORM_RECOGNIZER_ENDPOINT}
     restart: unless-stopped
     volumes:
       - app-tmp:/tmp

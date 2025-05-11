@@ -12,6 +12,14 @@ import DebugTab from "@/components/DebugTab";
 import { Order, OrderCategory, OrderItemUnion, isOrder } from "./types";
 import { OrderSummary } from "./order-summary";
 import { parse } from "js2xmlparser";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { ExportConfig, ExportConfigForm } from "./export-config";
 
 interface PDFDataListProps {
@@ -29,10 +37,11 @@ export function PDFDataList({
   rawMarkdown = "",
   maxHeight = "70vh",
   error = null,
-  streaming = false
 }: PDFDataListProps) {
   const [activeTab, setActiveTab] = useState<"data" | "debug">("data");
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
+    new Set(),
+  );
   const [parsedData, setParsedData] = useState<OrderItemUnion[]>([]);
   const [summary, setSummary] = useState<{
     [key: string]: { count: number; item: string };
@@ -40,9 +49,7 @@ export function PDFDataList({
   const [jsonError, setJsonError] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<Order | null>(null);
   const [copyStatus, setCopyStatus] = useState<string | null>(null);
-  const [isJsonData, setIsJsonData] = useState(false);
-  const [hoveredItem, setHoveredItem] = useState<Order | null>(null);
-  console.log("parsedData", parsedData);
+  const [deleteConfirmItem, setDeleteConfirmItem] = useState<Order | null>(null);
 
   // No need to reset tab now, since we always show debug tab when there's data
   useEffect(() => {
@@ -55,86 +62,70 @@ export function PDFDataList({
   useEffect(() => {
     if (data) {
       try {
-        // First try to parse as JSON directly
+        // Extract JSON from markdown if needed
+        const extractedJson = extractJsonFromMarkdown(data);
+        let parsedJson;
+
         try {
-          const parsedJson = JSON.parse(data);
-          handleJsonData(parsedJson);
-          setIsJsonData(true);
-          return;
+          parsedJson = JSON.parse(extractedJson);
         } catch (e) {
-          // Not JSON, continue to try extracting from markdown
+          console.error("Failed to parse JSON:", e);
+          setJsonError(
+            `Invalid JSON format: ${e instanceof Error ? e.message : String(e)}`,
+          );
+          return;
         }
 
-        // Try to extract JSON from markdown
-        const extractedJson = extractJsonFromMarkdown(data);
-        if (extractedJson) {
-          try {
-            const parsedJson = JSON.parse(extractedJson);
-            handleJsonData(parsedJson);
-            setIsJsonData(true);
-            return;
-          } catch (e) {
-            console.error("Failed to parse extracted JSON:", e);
+        // Initialize itemsArray for different possible JSON structures
+        let itemsArray: OrderItemUnion[] = [];
+
+        // Handle if the response is directly an array
+        if (Array.isArray(parsedJson)) {
+          itemsArray = parsedJson;
+        }
+        // Handle if items are in a nested property
+        else if (parsedJson.items && Array.isArray(parsedJson.items)) {
+          itemsArray = parsedJson.items;
+        }
+        // Handle if response has a content property that contains items
+        else if (parsedJson.content && Array.isArray(parsedJson.content)) {
+          itemsArray = parsedJson.content;
+        }
+        // Handle if there's a different structure entirely
+        else {
+          // Try to extract any array found in the JSON
+          const arrays = Object.values(parsedJson).filter((value) =>
+            Array.isArray(value),
+          );
+          if (arrays.length > 0) {
+            // Use the first array found
+            itemsArray = arrays[0] as OrderItemUnion[];
+          } else {
+            // Wrap the object in an array if no arrays were found
+            itemsArray = [parsedJson as OrderItemUnion];
           }
         }
 
-        // If we get here, it's not JSON data
-        setIsJsonData(false);
-        setParsedData([]);
-        setJsonError(null);
+        // Update state with parsed data
+        if (itemsArray.length > 0) {
+          setParsedData(itemsArray as OrderItemUnion[]);
+          setJsonError(null);
+
+          // Generate summary for required Artikel
+          generateSummary(itemsArray as OrderItemUnion[]);
+        } else {
+          setJsonError("No valid data found in the response.");
+        }
       } catch (err) {
-        console.error("Error processing data:", err);
+        console.error("Error processing JSON data:", err);
         setJsonError(
           `Error processing data: ${
             err instanceof Error ? err.message : String(err)
           }`,
         );
-        setIsJsonData(false);
       }
     }
   }, [data]);
-
-  const handleJsonData = (parsedJson: any) => {
-    // Initialize itemsArray for different possible JSON structures
-    let itemsArray: OrderItemUnion[] = [];
-
-    // Handle if the response is directly an array
-    if (Array.isArray(parsedJson)) {
-      itemsArray = parsedJson;
-    }
-    // Handle if items are in a nested property
-    else if (parsedJson.items && Array.isArray(parsedJson.items)) {
-      itemsArray = parsedJson.items;
-    }
-    // Handle if response has a content property that contains items
-    else if (parsedJson.content && Array.isArray(parsedJson.content)) {
-      itemsArray = parsedJson.content;
-    }
-    // Handle if there's a different structure entirely
-    else {
-      // Try to extract any array found in the JSON
-      const arrays = Object.values(parsedJson).filter((value) =>
-        Array.isArray(value),
-      );
-      if (arrays.length > 0) {
-        // Use the first array found
-        itemsArray = arrays[0] as OrderItemUnion[];
-      } else {
-        // Wrap the object in an array if no arrays were found
-        itemsArray = [parsedJson as OrderItemUnion];
-      }
-    }
-
-    // Update state with parsed data
-    if (itemsArray.length > 0) {
-      setParsedData(itemsArray as OrderItemUnion[]);
-      setJsonError(null);
-      // Generate summary for required Artikel
-      generateSummary(itemsArray as OrderItemUnion[]);
-    } else {
-      setJsonError("No valid data found in the response.");
-    }
-  };
 
   // Generate a summary of article quantities for the required Artikel
   const generateSummary = (items: OrderItemUnion[]) => {
@@ -145,6 +136,8 @@ export function PDFDataList({
         const sku = item.sku;
         const quantity = parseInt(item.quantity) || 1;
         const itemName = item.name;
+        // We don't need to track the path for orders, but we keep the code commented for future use
+        // const fullPath = path ? `${path} / ${itemName}` : itemName;
 
         // Create a key based on SKU to track quantities
         if (sku) {
@@ -231,24 +224,75 @@ export function PDFDataList({
       <OrderItemDisplay 
         item={item} 
         onEdit={setEditingItem} 
-        level={level}
-        isHovered={hoveredItem?.sku === item.sku && hoveredItem?.name === item.name}
-        onHover={(isHovering) => setHoveredItem(isHovering ? item : null)}
+        onDelete={(item) => setDeleteConfirmItem(item)}
+        level={level} 
       />
     );
   };
 
+  // Helper function to generate a unique signature for an order item
+  const getItemSignature = (item: Order) => {
+    return `${item.sku || ''}-${item.name || ''}-${item.quantity || ''}-${item.text || ''}-${item.price || ''}`;
+  };
+
+  // Handle deleting an order item
+  const handleDeleteItem = (itemToDelete: Order) => {
+    const itemToDeleteSignature = getItemSignature(itemToDelete);
+    let deletedOne = false;
+    
+    const deleteItemFromTree = (items: OrderItemUnion[]): OrderItemUnion[] => {
+      return items.reduce<OrderItemUnion[]>((acc, item) => {
+        if (isOrder(item)) {
+          // Skip the item to delete - only delete one instance with matching signature
+          if (
+            itemToDelete && 
+            !deletedOne && 
+            getItemSignature(item) === itemToDeleteSignature
+          ) {
+            deletedOne = true; // Mark as deleted to prevent multiple deletions
+            return acc; // Skip this item (delete it)
+          }
+          acc.push(item);
+        } else if (item.content) {
+          // Recursively filter items in the category
+          const filteredContent = deleteItemFromTree(item.content);
+          // Only include categories that still have content after filtering
+          if (filteredContent.length > 0) {
+            acc.push({
+              ...item,
+              content: filteredContent,
+            });
+          }
+        }
+        return acc;
+      }, []);
+    };
+
+    // Update the parsed data by removing the item
+    setParsedData((prev) => {
+      const updatedData = deleteItemFromTree(prev);
+      // Regenerate summary with the updated data
+      setTimeout(() => generateSummary(updatedData), 0);
+      return updatedData;
+    });
+    setDeleteConfirmItem(null);
+  };
+
   // Handle updating an order item
   const handleUpdateItem = (updatedItem: Order) => {
+    const editingItemSignature = editingItem ? getItemSignature(editingItem) : '';
+    let updatedOne = false;
+    
     const updateItemInTree = (items: OrderItemUnion[]): OrderItemUnion[] => {
       return items.map((item) => {
         if (isOrder(item)) {
           if (
-            editingItem &&
-            item.sku === editingItem.sku &&
-            item.name === editingItem.name
+            editingItem && 
+            !updatedOne && 
+            getItemSignature(item) === editingItemSignature
           ) {
             // This is the item we want to update
+            updatedOne = true; // Mark as updated to prevent multiple updates
             return { ...item, ...updatedItem };
           }
           return item;
@@ -264,10 +308,12 @@ export function PDFDataList({
     };
 
     // Update the parsed data
-    setParsedData((prev) => updateItemInTree(prev));
-
-    // Regenerate summary
-    generateSummary(parsedData);
+    setParsedData((prev) => {
+      const updatedData = updateItemInTree(prev);
+      // Regenerate summary with the updated data
+      setTimeout(() => generateSummary(updatedData), 0);
+      return updatedData;
+    });
   };
 
   // Render the summary of required Artikel
@@ -308,6 +354,43 @@ export function PDFDataList({
 
   return (
     <div className="w-full h-full flex flex-col">
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteConfirmItem !== null} onOpenChange={(open) => !open && setDeleteConfirmItem(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Order Item</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this order item? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {deleteConfirmItem && (
+              <div className="flex flex-col gap-2">
+                <p><strong>Name:</strong> {deleteConfirmItem.name || "Unnamed item"}</p>
+                {deleteConfirmItem.sku && <p><strong>SKU:</strong> {deleteConfirmItem.sku}</p>}
+                {deleteConfirmItem.quantity && (
+                  <p><strong>Quantity:</strong> {deleteConfirmItem.quantity} {deleteConfirmItem.quantityUnit || ""}</p>
+                )}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setDeleteConfirmItem(null)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={() => handleDeleteItem(deleteConfirmItem!)}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <div className="flex items-center mb-4 space-x-2">
         <Button
           variant={activeTab === "data" ? "indigo" : "outline"}
@@ -328,7 +411,7 @@ export function PDFDataList({
           </Button>
         )}
       </div>
-      
+
       <Card className="flex-grow overflow-hidden shadow-lg">
         <CardContent className="p-0 h-full space-y-3">
           {isLoading ? (
@@ -349,7 +432,7 @@ export function PDFDataList({
                 preventTruncation={true}
               />
             </div>
-          ) : isJsonData ? (
+          ) : (
             <div className="max-h-[70vh] overflow-y-auto overflow-x-hidden">
               {/* Control buttons */}
               <div className="p-4 flex justify-between sticky top-0 z-10 bg-white dark:bg-slate-950 shadow-md">
@@ -410,29 +493,6 @@ export function PDFDataList({
                 ) : (
                   <div className="text-slate-500 dark:text-slate-400">
                     No data available to display.
-                  </div>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="p-6">
-              <div className="prose prose-slate dark:prose-invert max-w-none">
-                <div className="py-4 px-6 bg-slate-50 dark:bg-slate-800/30 rounded-lg border border-slate-200 dark:border-slate-700">
-                  {data.split('\n').map((paragraph, index) => (
-                    <p 
-                      key={`paragraph-${index}`}
-                      className="my-2 text-slate-800 dark:text-slate-300"
-                    >
-                      {paragraph}
-                      {streaming && index === data.split('\n').length - 1 && (
-                        <span className="inline-block animate-pulse">▋</span>
-                      )}
-                    </p>
-                  ))}
-                </div>
-                {streaming && (
-                  <div className="text-center mt-4 text-sm text-slate-500">
-                    Processing... this may take a while for large documents
                   </div>
                 )}
               </div>
