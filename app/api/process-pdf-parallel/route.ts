@@ -65,11 +65,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Get API keys from environment variables
-    const openApiKey = process.env.OPENAPI_KEY;
+    const OPENAIKey = process.env.OPENAI_KEY;
     const azureKey = process.env.FORM_RECOGNIZER_KEY;
     const azureEndpoint = process.env.FORM_RECOGNIZER_ENDPOINT;
 
-    if (!openApiKey) {
+    if (!OPENAIKey) {
       return NextResponse.json(
         { error: "OpenRouter API key not configured on server" },
         { status: 401 },
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
 
     // Start both processes asynchronously
     const [llmResult, azureResult] = await Promise.allSettled([
-      processWithLlm(file, buffer, openApiKey),
+      processWithLlm(file, buffer, OPENAIKey),
       processWithAzure(buffer),
     ]);
 
