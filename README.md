@@ -1,8 +1,10 @@
 ## Challenge Koch-a-doc
 
+![Demo-1](./test-single-page-UI.gif)
+
 ### Architecture Diagram
 
-![Alt text](./Architecture_Diagram.png)
+![Architecture Diagram](./Architecture_Diagram.png)
 
 - Blue components (UI Layer) handle user interactions and frontend components
 - Green components (Service Layer) manage processing and business logic
@@ -139,3 +141,5 @@ This will run the application in a container with all required dependencies, inc
 - **Multiple AI Models**: Supports various OpenRouter models including Claude, GPT, Gemini, and Llama
 - **Streaming Responses**: Real-time streaming output for large document processing
 - **Debug Mode**: Raw markdown view for debugging extracted content
+
+![Demo-2](./test-multi-page-UI.gif)
