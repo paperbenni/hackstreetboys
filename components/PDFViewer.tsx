@@ -40,7 +40,7 @@ export default function PDFViewer({
     const { hoveredCommission } = useHover();
     const [numPages, setNumPages] = useState<number>();
     const [pageNumber, setPageNumber] = useState<number>(1);
-    const [textPositions, setTextPositions] = useState<any[]>([]);
+    const [textPositions, setTextPositions] = useState<Record<number, any[]>>({});
     const containerRef = useRef<HTMLDivElement>(null);
     const FIXED_PDF_WIDTH = 500; // px (smaller display)
     const aspectRatio = pageHeightInches / pageWidthInches;
@@ -63,10 +63,6 @@ export default function PDFViewer({
             setObjectUrl(pdfUrl);
         }
     }, [pdfUrl]);
-
-    function onDocumentLoadSuccess({ numPages }: { numPages: number }): void {
-        setNumPages(numPages);
-    }
 
     // Extract text positions from the PDF page
     async function extractTextPositions(pdfUrl: string | File, pageNumber: number) {
@@ -95,21 +91,54 @@ export default function PDFViewer({
                 page: pageNumber,
             };
         });
-        setTextPositions(items);
+        setTextPositions(prev => ({
+            ...prev,
+            [pageNumber]: items
+        }));
+    }
+
+    // Extract text positions for all pages when document loads
+    async function extractAllPagesTextPositions(pdfUrl: string | File, totalPages: number) {
+        for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+            await extractTextPositions(pdfUrl, pageNum);
+        }
+    }
+
+    function onDocumentLoadSuccess({ numPages }: { numPages: number }): void {
+        setNumPages(numPages);
+        if (objectUrl) {
+            extractAllPagesTextPositions(objectUrl, numPages);
+        }
     }
 
     useEffect(() => {
-        if (objectUrl && pageNumber) {
-            extractTextPositions(objectUrl, pageNumber);
+        if (objectUrl && numPages) {
+            extractAllPagesTextPositions(objectUrl, numPages);
         }
-    }, [objectUrl, pageNumber]);
+    }, [objectUrl, numPages]);
 
-    // Find matches for hoveredCommission
+    // Find matches for hoveredCommission across all pages
     const highlightBoxes = hoveredCommission
-        ? textPositions.filter(
+        ? Object.values(textPositions).flat().filter(
             (item) => item.text.trim() === hoveredCommission.trim()
         )
         : [];
+
+    // Filter highlight boxes for current page
+    const currentPageHighlightBoxes = highlightBoxes.filter(
+        box => box.page === pageNumber
+    );
+
+    // Effect to navigate to the page containing the hovered commission
+    useEffect(() => {
+        if (hoveredCommission && highlightBoxes.length > 0) {
+            // Find the first occurrence of the commission across all pages
+            const firstOccurrence = highlightBoxes[0];
+            if (firstOccurrence && firstOccurrence.page !== pageNumber) {
+                setPageNumber(firstOccurrence.page);
+            }
+        }
+    }, [hoveredCommission, highlightBoxes]);
 
     if (!objectUrl) {
         return <div className="text-lg">Preparing PDF...</div>;
@@ -136,7 +165,7 @@ export default function PDFViewer({
                 </Document>
                 
                 {/* Highlight overlays for hovered commission */}
-                {highlightBoxes.length > 0 && (
+                {currentPageHighlightBoxes.length > 0 && (
                     <svg
                         style={{
                             position: 'absolute',
@@ -149,7 +178,7 @@ export default function PDFViewer({
                         width={pageSize.width}
                         height={pageSize.height}
                     >
-                        {highlightBoxes.map((item, idx) => {
+                        {currentPageHighlightBoxes.map((item, idx) => {
                           const pdfPageHeight = pageHeightInches * 72; // 1 inch = 72 points
                           const flippedY = pdfPageHeight - item.y - item.height;
                           const svgX = (item.x / pageWidthInches / 72) * pageSize.width;
