@@ -21,6 +21,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { ExportConfig, ExportConfigForm } from "./export-config";
+import { useHover } from './hover-context';
 
 interface PDFDataListProps {
   data: string;
@@ -49,6 +50,7 @@ export function PDFDataList({
   const [jsonError, setJsonError] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<Order | null>(null);
   const [copyStatus, setCopyStatus] = useState<string | null>(null);
+  const { setHoveredCommission } = useHover();
   const [deleteConfirmItem, setDeleteConfirmItem] = useState<Order | null>(null);
 
   // No need to reset tab now, since we always show debug tab when there's data
@@ -105,7 +107,7 @@ export function PDFDataList({
             itemsArray = [parsedJson as OrderItemUnion];
           }
         }
-
+        console.log("itemsArray", itemsArray);
         // Update state with parsed data
         if (itemsArray.length > 0) {
           setParsedData(itemsArray as OrderItemUnion[]);
@@ -221,12 +223,17 @@ export function PDFDataList({
   // Render a single order item
   const renderOrderItem = (item: Order, level: number = 0) => {
     return (
+      <div
+        onMouseEnter={() => setHoveredCommission(item.commission)}
+        onMouseLeave={() => setHoveredCommission(null)}
+      >
       <OrderItemDisplay 
         item={item} 
         onEdit={setEditingItem} 
         onDelete={(item) => setDeleteConfirmItem(item)}
         level={level} 
       />
+      </div>
     );
   };
 

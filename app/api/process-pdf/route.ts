@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
     // Prompt for extracting the items
     // This is just a placeholder for now
     const prompt = `
-      Write a poem from this
+      testing stuf
       ${fullMarkdown}
     `;
 

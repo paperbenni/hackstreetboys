@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import Image from "next/image";
 
 type NavigationItem = {
   name: string;
@@ -32,10 +33,8 @@ export function Navbar() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <div className="flex-shrink-0">
-            <Link href="/" className="flex-shrink-0">
-              <span className="text-slate-800 dark:text-slate-300 font-bold text-xl">
-                Hackstreet Boys
-              </span>
+            <Link href="/" className="flex-shrink-0" aria-label="Home">
+              <Image src="/kochlogo.svg" alt="Koch Logo" width={100} height={100} priority />
             </Link>
           </div>
 
