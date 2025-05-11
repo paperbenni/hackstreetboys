@@ -106,27 +106,29 @@ export default function ProcessDocumentPage() {
         </div>
 
         {(selectedFile || summary || isLoading) && (
-          <div className="w-full flex flex-col lg:flex-row gap-4 lg:gap-6 mt-2">
+          <div className="w-full flex flex-col lg:flex-row gap-4 lg:gap-6 mt-2 min-h-0 flex-grow">
             {selectedFile && (
               <div
-                className={`w-full ${summary || isLoading ? "lg:w-1/2" : "lg:w-full"}`}
+                className={`w-full ${summary || isLoading ? "lg:w-1/2" : "lg:w-full"} flex flex-col min-h-0 flex-grow`}
               >
                 <h2 className="text-lg font-medium text-slate-800 dark:text-slate-300 mb-2 lg:mb-4">
                   Document View
                 </h2>
-                <PdfViewer 
-                  file={selectedFile} 
-                  boundingBoxes={boundingBoxes}
-                  visibleBoxes={visibleBoxes}
-                  pageWidthInches={pageWidth}
-                  pageHeightInches={pageHeight}
-                />
+                <div className="flex-grow min-h-0 overflow-hidden">
+                  <PdfViewer 
+                    file={selectedFile} 
+                    boundingBoxes={boundingBoxes}
+                    visibleBoxes={visibleBoxes}
+                    pageWidthInches={pageWidth}
+                    pageHeightInches={pageHeight}
+                  />
+                </div>
               </div>
             )}
 
             {(summary || isLoading) && (
               <div
-                className={`w-full ${selectedFile ? "lg:w-1/2" : "lg:w-full"} mt-4 lg:mt-0`}
+                className={`w-full ${selectedFile ? "lg:w-1/2" : "lg:w-full"} mt-4 lg:mt-0 flex flex-col min-h-0 flex-grow`}
               >
                 <div className="flex items-center justify-between mb-2 lg:mb-4">
                   <h2 className="text-lg font-medium text-slate-800 dark:text-slate-300">
@@ -143,13 +145,15 @@ export default function ProcessDocumentPage() {
                     </Button>
                   )}
                 </div>
-                <PDFDataList 
-                  data={summary} 
-                  isLoading={isLoading} 
-                  rawMarkdown={rawMarkdown}
-                  maxHeight="70vh"
-                  streaming={isLoading && Boolean(summary)}
-                />
+                <div className="flex-grow min-h-0 overflow-hidden">
+                  <PDFDataList 
+                    data={summary} 
+                    isLoading={isLoading} 
+                    rawMarkdown={rawMarkdown}
+                    maxHeight="70vh"
+                    streaming={isLoading && Boolean(summary)}
+                  />
+                </div>
               </div>
             )}
           </div>
