@@ -45,8 +45,6 @@ This application uses streaming for OpenAI/OpenRouter API responses, offering se
 2. **Handling Large Output**: Prevents truncation issues with large PDF outputs
 3. **Better User Experience**: Provides real-time feedback during processing
 
-For technical details on how streaming is implemented, see [STREAMING.md](STREAMING.md).
-
 ## Docker Deployment
 
 The application can also be run using Docker, which simplifies setup by packaging all dependencies including Node.js and the required Python tools:
